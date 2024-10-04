@@ -1,0 +1,1 @@
+let memory = new Array(128).fill(new Array(16).fill(0));
