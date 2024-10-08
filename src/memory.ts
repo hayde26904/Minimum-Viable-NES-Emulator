@@ -1,7 +1,7 @@
-export class Memory {
+export abstract class Memory {
     private memory: Uint8Array;
 
-    constructor(bytes : Uint8Array = null) {
+    constructor(bytes? : Uint8Array) {
         this.memory = new Uint8Array(2048);
         
         if(bytes !== null){

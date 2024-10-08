@@ -1,9 +1,10 @@
 import { Memory } from "./memory";
 import { opMap } from "./operation";
+import { ROM } from "./rom";
 
 export class CPU {
 
-    private prgRom: Uint8Array;
+    private prgRom: ROM;
     private Areg: number;
     private Xreg: number;
     private Yreg: number;
@@ -14,7 +15,7 @@ export class CPU {
     private Nflag: boolean;
 
     constructor() {
-        this.prgRom = new Uint8Array(256); // This is placeholder. We will read the header to get actual size later
+        this.prgRom;
 
         this.Areg = 0;
         this.Xreg = 0;
@@ -26,12 +27,13 @@ export class CPU {
         this.Nflag = false;
     }
 
-    public loadProgram(program : Uint8Array): void {
+    public loadProgram(program : ROM): void {
         this.prgRom = program;
     }
 
     public executeOperation(): void {
-        let opcode = mem.read(this.PC);
+        let rom = this.prgRom;
+        let opcode = rom.read(this.PC);
 
         if(opMap.has(opcode)){
 
@@ -39,10 +41,10 @@ export class CPU {
             let args = new Uint8Array(operation.numArgs);
 
             for(let i = 0; i < operation.numArgs; i++){
-                args[i] = mem.read(this.PC + i + 1);
+                args[i] = rom.read(this.PC + i + 1);
             }
 
-            operation.method(this, mem, args);
+            operation.method(this, rom, args);
             this.PC += operation.numArgs + 1;
 
         } else {
