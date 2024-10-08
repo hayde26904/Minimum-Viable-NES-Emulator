@@ -3,7 +3,7 @@ export abstract class Memory {
 
     constructor(bytes? : Uint8Array) {
         this.memory = new Uint8Array(2048);
-        
+
         if(bytes !== null){
             this.memory = bytes;
         }

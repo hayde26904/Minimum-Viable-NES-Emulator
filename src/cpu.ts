@@ -2,6 +2,14 @@ import { Memory } from "./memory";
 import { opMap } from "./operation";
 import { ROM } from "./rom";
 
+const prgStart = 0x8000;
+
+export interface CPUflags {
+    Z: boolean;
+    N: boolean;
+    C: boolean;
+}
+
 export class CPU {
 
     private prgRom: ROM;
@@ -13,6 +21,7 @@ export class CPU {
     private Cflag: boolean;
     private Zflag: boolean;
     private Nflag: boolean;
+    private overflow: boolean;
 
     constructor() {
         this.prgRom;
@@ -33,37 +42,43 @@ export class CPU {
 
     public executeOperation(): void {
         let rom = this.prgRom;
-        let opcode = rom.read(this.PC);
-
+        let zeroedPC = this.PC - 0x8000;
+        let opcode = rom.read(zeroedPC);
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
             let args = new Uint8Array(operation.numArgs);
 
             for(let i = 0; i < operation.numArgs; i++){
-                args[i] = rom.read(this.PC + i + 1);
+                args[i] = rom.read(zeroedPC + i + 1);
             }
-
+            console.log("opcode: ", opcode);
+            console.log("args ", args);
             operation.method(this, rom, args);
             this.PC += operation.numArgs + 1;
-
         } else {
             console.log(`Invalid or unimplemented opcode: ${opcode}`);
         }
     }
 
+
+
+    public setPC(value: number): void {
+        this.PC = value;
+    }
+
     public setAreg(value: number): void {
-        this.Areg = value;
+        this.Areg = value & 0xFF;
         this.setFlags(value);
     }
 
     public setXreg(value: number): void {
-        this.Xreg = value;
+        this.Xreg = value & 0xFF;
         this.setFlags(value);
     }
 
     public setYreg(value: number): void {
-        this.Yreg = value;
+        this.Yreg = value & 0xFF;
         this.setFlags(value);
     }
 
@@ -82,9 +97,17 @@ export class CPU {
     public setFlags(value: number): void {
         if(value === -1) return;
         let val = value;
-        this.Cflag = (val > 0xFF);
+        this.Cflag = this.overflow;
         this.Zflag = val === 0;
         this.Nflag = (val & 0x80) === 0x80;
     };
+
+    public getFlags(): CPUflags {
+        return {
+            Z: this.Zflag,
+            N: this.Nflag,
+            C: this.Cflag
+        }
+    }
 
 }
