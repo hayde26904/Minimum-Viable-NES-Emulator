@@ -1,1 +1,1 @@
-console.log("Hello, world!");
+(()=>{var e;null===(e=document.getElementById("romInput"))||void 0===e||e.addEventListener("change",(function(e){var r=e.target;if(r.files&&r.files[0]){var n=r.files[0],t=new FileReader;t.onload=function(e){var r;if(null===(r=e.target)||void 0===r?void 0:r.result){var n=new Uint8Array(e.target.result);console.log(n[32769])}},t.readAsArrayBuffer(n)}}))})();
