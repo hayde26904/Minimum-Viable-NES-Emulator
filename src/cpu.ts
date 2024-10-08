@@ -2,6 +2,8 @@ import { Memory } from "./memory";
 import { opMap } from "./operation";
 
 export class CPU {
+
+    private prgRom: Uint8Array;
     private Areg: number;
     private Xreg: number;
     private Yreg: number;
@@ -12,6 +14,8 @@ export class CPU {
     private Nflag: boolean;
 
     constructor() {
+        this.prgRom = new Uint8Array(256); // This is placeholder. We will read the header to get actual size later
+
         this.Areg = 0;
         this.Xreg = 0;
         this.Yreg = 0;
@@ -22,7 +26,11 @@ export class CPU {
         this.Nflag = false;
     }
 
-    public executeOperation(mem: Memory): void {
+    public loadProgram(program : Uint8Array): void {
+        this.prgRom = program;
+    }
+
+    public executeOperation(): void {
         let opcode = mem.read(this.PC);
 
         if(opMap.has(opcode)){

@@ -1,8 +1,12 @@
 export class Memory {
     private memory: Uint8Array;
 
-    constructor() {
-        this.memory = new Uint8Array(2048).fill(0);
+    constructor(bytes : Uint8Array = null) {
+        this.memory = new Uint8Array(2048);
+        
+        if(bytes !== null){
+            this.memory = bytes;
+        }
     }
 
     public read(address: number): number {
