@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "module": "es6",
+    "target": "es5",
+    "allowJs": true,
+    "outDir": "public",
+    "rootDir": "src",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+  },
+  //"files": ["src/example/index.ts"]
+  "include": [
+        "src/**/*.ts"
+  ],
+}
