@@ -13,7 +13,7 @@ export abstract class Memory {
         return this.memory[address];
     }
 
-    public write(address: number, value: number): void {
+    public write(value: number, address : number): void {
         this.memory[address] = value;
     }
 }

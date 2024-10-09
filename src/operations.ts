@@ -28,7 +28,13 @@ export class LDA {
 export class STA {
     public static zeroPage(cpu: CPU, ram: RAM, args: Uint8Array): void {
         let addr = args[0];
-        ram.write(addr, cpu.getAreg());
+        ram.write(cpu.getAreg(), addr);
+        console.log(`Storing A register (${cpu.getAreg()}) in memory at address: ${addr}`);
+    }
+
+    public static absolute(cpu: CPU, ram: RAM, args: Uint8Array): void {
+        let addr = Util.bytesToAddr(args[0], args[1]);
+        ram.write(cpu.getAreg(), addr);
         console.log(`Storing A register (${cpu.getAreg()}) in memory at address: ${addr}`);
     }
 }
