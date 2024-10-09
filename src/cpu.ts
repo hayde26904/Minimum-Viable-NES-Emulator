@@ -45,15 +45,11 @@ export class CPU {
         this.Nflag = false;
     }
 
-    public static bytesToAddr(lobyte : number, hibyte : number): number {
-        return (hibyte << 8) | lobyte;
-    }
-
     public executeOperation(ram : RAM, prgRom : ROM): void {
         let rom = prgRom;
         let zeroedPC = this.PC - 0x8000;
         let opcode = rom.read(zeroedPC);
-        console.log("PC: ", this.PC);
+        //console.log("PC: ", this.PC);
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
@@ -62,8 +58,8 @@ export class CPU {
             for(let i = 0; i < operation.numArgs; i++){
                 args[i] = rom.read(zeroedPC + i + 1);
             }
-            console.log("opcode: ", opcode);
-            console.log("args ", args);
+            //console.log("opcode: ", opcode);
+            //console.log("args ", args);
             operation.method(this, ram, args);
             this.PC += operation.numArgs + 1;
         } else {
