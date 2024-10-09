@@ -1,10 +1,10 @@
 export abstract class Memory {
     private memory: Uint8Array;
 
-    constructor(bytes? : Uint8Array) {
-        this.memory = new Uint8Array(2048);
-
-        if(bytes !== null){
+    constructor(size : number, bytes? : Uint8Array) {
+        if(!bytes){
+            this.memory = new Uint8Array(size).fill(0);
+        } else {
             this.memory = bytes;
         }
     }

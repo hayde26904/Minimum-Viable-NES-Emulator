@@ -1,5 +1,6 @@
 import { Memory } from "./memory";
 import { opMap } from "./operation";
+import { RAM } from "./ram";
 import { ROM } from "./rom";
 
 const prgStart = 0x8000;
@@ -12,7 +13,6 @@ export interface CPUflags {
 
 export class CPU {
 
-    private prgRom: ROM;
     private Areg: number;
     private Xreg: number;
     private Yreg: number;
@@ -24,8 +24,17 @@ export class CPU {
     private overflow: boolean;
 
     constructor() {
-        this.prgRom;
+        this.Areg = 0;
+        this.Xreg = 0;
+        this.Yreg = 0;
+        this.PC = 0x8000;
+        this.SP = 0;
+        this.Cflag = false;
+        this.Zflag = false;
+        this.Nflag = false;
+    }
 
+    public reset(): void {
         this.Areg = 0;
         this.Xreg = 0;
         this.Yreg = 0;
@@ -40,13 +49,8 @@ export class CPU {
         return (hibyte << 8) | lobyte;
     }
 
-    public loadProgram(program : ROM): void {
-        this.prgRom = program;
-        console.log("Program loaded: ", this.prgRom);
-    }
-
-    public executeOperation(): void {
-        let rom = this.prgRom;
+    public executeOperation(ram : RAM, prgRom : ROM): void {
+        let rom = prgRom;
         let zeroedPC = this.PC - 0x8000;
         let opcode = rom.read(zeroedPC);
         console.log("PC: ", this.PC);
@@ -58,9 +62,9 @@ export class CPU {
             for(let i = 0; i < operation.numArgs; i++){
                 args[i] = rom.read(zeroedPC + i + 1);
             }
-            //console.log("opcode: ", opcode);
-            //console.log("args ", args);
-            operation.method(this, rom, args);
+            console.log("opcode: ", opcode);
+            console.log("args ", args);
+            operation.method(this, ram, args);
             this.PC += operation.numArgs + 1;
         } else {
             console.log(`Invalid or unimplemented opcode: ${opcode}`);
