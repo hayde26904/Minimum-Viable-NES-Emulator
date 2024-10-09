@@ -9,6 +9,6 @@ export function ldaImmediate(cpu: CPU, mem: Memory, args: Uint8Array): void {
 }
 
 export function jmpAbsolute(cpu: CPU, mem: Memory, args: Uint8Array): void {
-    let addr = args[0] | args[1] << 8;
-    cpu.setPC(addr);
+    let addr = CPU.bytesToAddr(args[0], args[1]);
+    cpu.setPC(addr - args.length - 1);
 }

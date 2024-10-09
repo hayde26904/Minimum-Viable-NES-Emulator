@@ -36,14 +36,20 @@ export class CPU {
         this.Nflag = false;
     }
 
+    public static bytesToAddr(lobyte : number, hibyte : number): number {
+        return (hibyte << 8) | lobyte;
+    }
+
     public loadProgram(program : ROM): void {
         this.prgRom = program;
+        console.log("Program loaded: ", this.prgRom);
     }
 
     public executeOperation(): void {
         let rom = this.prgRom;
         let zeroedPC = this.PC - 0x8000;
         let opcode = rom.read(zeroedPC);
+        console.log("PC: ", this.PC);
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
@@ -52,24 +58,29 @@ export class CPU {
             for(let i = 0; i < operation.numArgs; i++){
                 args[i] = rom.read(zeroedPC + i + 1);
             }
-            console.log("opcode: ", opcode);
-            console.log("args ", args);
+            //console.log("opcode: ", opcode);
+            //console.log("args ", args);
             operation.method(this, rom, args);
             this.PC += operation.numArgs + 1;
         } else {
             console.log(`Invalid or unimplemented opcode: ${opcode}`);
+            this.PC++;
         }
     }
 
+    public setPC(addr: number): void {
+        this.PC = addr;
+        console.log("SET PC: ", this.PC);
+    }
 
-
-    public setPC(value: number): void {
-        this.PC = value;
+    public getPC(): number {
+        return this.PC;
     }
 
     public setAreg(value: number): void {
         this.Areg = value & 0xFF;
         this.setFlags(value);
+        console.log("SET AREG: ", this.Areg);
     }
 
     public setXreg(value: number): void {

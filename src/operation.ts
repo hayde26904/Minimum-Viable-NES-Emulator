@@ -10,5 +10,6 @@ export class Operation {
 }
 
 export const opMap: Map<number, Operation> = new Map<number, Operation>([
-    [0xA9, new Operation(ops.ldaImmediate, 1)]
+    [0xA9, new Operation(ops.ldaImmediate, 1)],
+    [0x4C, new Operation(ops.jmpAbsolute, 2)]
 ]);

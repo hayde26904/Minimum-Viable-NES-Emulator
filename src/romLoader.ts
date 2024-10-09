@@ -13,4 +13,4 @@ document.getElementById('romInput')?.addEventListener('change', (event) => {
       
       reader.readAsArrayBuffer(file);
     }
-  });
+});
