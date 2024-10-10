@@ -11,6 +11,42 @@ export interface CPUflags {
     C: boolean;
 }
 
+export enum addrModes {
+    IMPLICIT,
+    IMMEDIATE,
+    ZEROPAGE,
+    ZEROPAGEX,
+    ZEROPAGEY,
+    ABSOLUTE,
+    ABSOLUTEX,
+    ABSOLUTEY,
+    ACCUMULATOR,
+    RELATIVE,
+    INDIRECT,
+    INDIRECTX, //(a,x)
+    INDIRECTY //(a),y
+}
+
+//TODO FINISH REFACTORING
+
+export let addrModeSizeMap : Map<number,number> = new Map<number,number>([
+    [addrModes.IMPLICIT, 1],
+    [addrModes.IMMEDIATE, 1],
+    [addrModes.ZEROPAGE, 2],
+    [addrModes.ZEROPAGEX, 2],
+    [addrModes.ZEROPAGEY, 2],
+    [addrModes.ABSOLUTE, 3],
+    [addrModes.ABSOLUTEX, 3],
+    [addrModes.ABSOLUTEY, 3],
+    [addrModes.ACCUMULATOR, 1],
+    [addrModes.RELATIVE, 2],
+    [addrModes.INDIRECT, 3],
+    [addrModes.INDIRECTX, 3],
+    [addrModes.INDIRECTY, 3]
+]);
+
+
+
 export class CPU {
 
     private Areg: number;
@@ -47,21 +83,22 @@ export class CPU {
 
     public executeOperation(ram : RAM, prgRom : ROM): void {
         let rom = prgRom;
-        let zeroedPC = this.PC - 0x8000;
+        let zeroedPC = this.PC - prgStart;
         let opcode = rom.read(zeroedPC);
-        //console.log("PC: ", this.PC);
+
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
-            let args = new Uint8Array(operation.numArgs);
+            let opAddrMode = operation.addrMode;
+            let opSize = addrModeSizeMap.get(opAddrMode);
+            let args = new Uint8Array(opSize);
 
-            for(let i = 0; i < operation.numArgs; i++){
-                args[i] = rom.read(zeroedPC + i + 1);
+            for(let i = 0; i < opSize; i++){
+                args[i] = rom.read(zeroedPC + i);
             }
-            //console.log("opcode: ", opcode);
-            //console.log("args ", args);
-            operation.method(this, ram, args);
-            this.PC += operation.numArgs + 1;
+
+            operation.method(this, ram, arg);
+            this.PC += opSize;
         } else {
             console.log(`Invalid or unimplemented opcode: ${opcode}`);
             this.PC++;
