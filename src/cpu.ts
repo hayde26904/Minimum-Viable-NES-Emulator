@@ -111,6 +111,7 @@ export class CPU {
             }
 
             let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args);
+            console.log(`executing opcode: ${opcode.toString(16)} with arg: ${arg.toString(16)}`);
             operation.method(this, ram, arg);
             this.PC += opSize;
         } else {
