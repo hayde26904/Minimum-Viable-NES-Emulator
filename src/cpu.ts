@@ -2,6 +2,7 @@ import { Memory } from "./memory";
 import { opMap } from "./operation";
 import { RAM } from "./ram";
 import { ROM } from "./rom";
+import * as addrModeHandlers from "./addrModeHandlers";
 
 const prgStart = 0x8000;
 
@@ -11,41 +12,53 @@ export interface CPUflags {
     C: boolean;
 }
 
-export enum addrModes {
+export const enum addrModes {
     IMPLICIT,
     IMMEDIATE,
     ZEROPAGE,
-    ZEROPAGEX,
-    ZEROPAGEY,
+    ZEROPAGE_X,
+    ZEROPAGE_Y,
     ABSOLUTE,
-    ABSOLUTEX,
-    ABSOLUTEY,
+    ABSOLUTE_X,
+    ABSOLUTE_Y,
     ACCUMULATOR,
     RELATIVE,
     INDIRECT,
-    INDIRECTX, //(a,x)
-    INDIRECTY //(a),y
+    INDIRECT_X, //(a,x)
+    INDIRECT_Y //(a),y
 }
 
-//TODO FINISH REFACTORING
-
-export let addrModeSizeMap : Map<number,number> = new Map<number,number>([
+export const addrModeSizeMap : Map<number,number> = new Map<number,number>([
     [addrModes.IMPLICIT, 1],
     [addrModes.IMMEDIATE, 1],
     [addrModes.ZEROPAGE, 2],
-    [addrModes.ZEROPAGEX, 2],
-    [addrModes.ZEROPAGEY, 2],
+    [addrModes.ZEROPAGE_X, 2],
+    [addrModes.ZEROPAGE_Y, 2],
     [addrModes.ABSOLUTE, 3],
-    [addrModes.ABSOLUTEX, 3],
-    [addrModes.ABSOLUTEY, 3],
+    [addrModes.ABSOLUTE_X, 3],
+    [addrModes.ABSOLUTE_Y, 3],
     [addrModes.ACCUMULATOR, 1],
     [addrModes.RELATIVE, 2],
     [addrModes.INDIRECT, 3],
-    [addrModes.INDIRECTX, 3],
-    [addrModes.INDIRECTY, 3]
+    [addrModes.INDIRECT_X, 3],
+    [addrModes.INDIRECT_Y, 3]
 ]);
 
-
+export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> = new Map<number, addrModeHandlers.addrModeHandler>([
+    [addrModes.IMPLICIT, addrModeHandlers.implicit],
+    [addrModes.IMMEDIATE, addrModeHandlers.immediate],
+    [addrModes.ZEROPAGE, addrModeHandlers.zeropage],
+    [addrModes.ZEROPAGE_X, addrModeHandlers.zeropageX],
+    [addrModes.ZEROPAGE_Y, addrModeHandlers.zeropageY],
+    [addrModes.ABSOLUTE, addrModeHandlers.absolute],
+    [addrModes.ABSOLUTE_X, addrModeHandlers.absoluteX],
+    [addrModes.ABSOLUTE_Y, addrModeHandlers.absoluteY],
+    [addrModes.ACCUMULATOR, addrModeHandlers.accumulator],
+    [addrModes.RELATIVE, addrModeHandlers.relative],
+    [addrModes.INDIRECT, addrModeHandlers.indirect],
+    [addrModes.INDIRECT_X, addrModeHandlers.indirectX],
+    [addrModes.INDIRECT_Y, addrModeHandlers.indirectY]
+]);
 
 export class CPU {
 
@@ -97,6 +110,7 @@ export class CPU {
                 args[i] = rom.read(zeroedPC + i);
             }
 
+            let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args);
             operation.method(this, ram, arg);
             this.PC += opSize;
         } else {
