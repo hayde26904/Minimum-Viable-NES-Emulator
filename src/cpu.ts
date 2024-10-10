@@ -3,6 +3,7 @@ import { opMap } from "./operation";
 import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as addrModeHandlers from "./addrModeHandlers";
+import { argTypes } from "./operation";
 
 const prgStart = 0x8000;
 
@@ -102,7 +103,9 @@ export class CPU {
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
+            let opMethod = operation.method;
             let opAddrMode = operation.addrMode;
+            let opArgType = operation.argType;
             let opSize = addrModeSizeMap.get(opAddrMode);
             let args = new Uint8Array(opSize);
 
@@ -110,7 +113,14 @@ export class CPU {
                 args[i] = rom.read(zeroedPC + i);
             }
 
-            let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args);
+            let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args, opArgType);
+            switch (opArgType) {
+                case argTypes.value:
+                    break
+                case argTypes.pointer:
+                    arg = ram.read(arg);
+                    break;
+            }
             console.log(`executing opcode: ${opcode.toString(16)} with arg: ${arg.toString(16)}`);
             operation.method(this, ram, arg);
             this.PC += opSize;
