@@ -4,6 +4,10 @@ export class Util {
     }
 
     public static hex(value : number) : string {
-        return value.toString(16).toUpperCase();
+        if(value === null){
+            return "none";
+        } else {
+            return value.toString(16).toUpperCase();
+        }
     }
 }

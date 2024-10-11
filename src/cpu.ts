@@ -4,8 +4,7 @@ import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as addrModeHandlers from "./addrModeHandlers";
 import { argTypes } from "./operation";
-
-const prgStart = 0x8000;
+import { Util } from "./util";
 
 export interface CPUflags {
     Z: boolean;
@@ -31,7 +30,7 @@ export const enum addrModes {
 
 export const addrModeSizeMap : Map<number,number> = new Map<number,number>([
     [addrModes.IMPLICIT, 1],
-    [addrModes.IMMEDIATE, 1],
+    [addrModes.IMMEDIATE, 2],
     [addrModes.ZEROPAGE, 2],
     [addrModes.ZEROPAGE_X, 2],
     [addrModes.ZEROPAGE_Y, 2],
@@ -63,6 +62,7 @@ export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> 
 
 export class CPU {
 
+    private ram: RAM;
     private Areg: number;
     private Xreg: number;
     private Yreg: number;
@@ -74,43 +74,59 @@ export class CPU {
     private overflow: boolean;
 
     constructor() {
+
+        this.ram = new RAM(0xffff);
+
         this.Areg = 0;
         this.Xreg = 0;
         this.Yreg = 0;
-        this.PC = 0x8000;
+        this.PC = 0;
         this.SP = 0;
         this.Cflag = false;
         this.Zflag = false;
         this.Nflag = false;
+    }
+
+    public loadProgram(rom: ROM): void {
+        let romBytes = rom.getMemory().slice(16); // THIS WILL NOT BE HARDCODED IN THE FUTURE
+        console.log(romBytes);
+        let prgStartAddr = this.PC = Util.bytesToAddr(romBytes[0x7ffa], romBytes[0x7ffb]);
+        console.log(Util.hex(prgStartAddr));
+
+        for(let i = 0; i < romBytes.length; i++){
+            this.ram.write(romBytes[i], prgStartAddr + i);
+        }
     }
 
     public reset(): void {
         this.Areg = 0;
         this.Xreg = 0;
         this.Yreg = 0;
-        this.PC = 0x8000;
+        this.PC = 0;
         this.SP = 0;
         this.Cflag = false;
         this.Zflag = false;
         this.Nflag = false;
     }
 
-    public executeOperation(ram : RAM, prgRom : ROM): void {
-        let rom = prgRom;
-        let zeroedPC = this.PC - prgStart;
-        let opcode = rom.read(zeroedPC);
+    public executeOperation(): void {
+
+        let ram = this.ram;
+        let opcode = ram.read(this.PC);
 
         if(opMap.has(opcode)){
 
             let operation = opMap.get(opcode);
+            let opName = operation.name;
             let opMethod = operation.method;
             let opAddrMode = operation.addrMode;
             let opArgType = operation.argType;
             let opSize = addrModeSizeMap.get(opAddrMode);
-            let args = new Uint8Array(opSize);
+            let numArgs = opSize - 1;
+            let args = new Uint8Array(numArgs);
 
-            for(let i = 0; i < opSize; i++){
-                args[i] = rom.read(zeroedPC + i);
+            for(let i = 0; i < args.length; i++){
+                args[i] = ram.read(this.PC + i + 1);
             }
 
             let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args, opArgType);
@@ -121,18 +137,20 @@ export class CPU {
                     arg = ram.read(arg);
                     break;
             }
-            console.log(`executing opcode: ${opcode.toString(16)} with arg: ${arg.toString(16)}`);
-            operation.method(this, ram, arg);
+
+            console.log(`${opName} ${Util.hex(arg)}`);
+
+            opMethod(this, ram, arg);
             this.PC += opSize;
         } else {
-            console.log(`Invalid or unimplemented opcode: ${opcode}`);
+            console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
         }
     }
 
     public setPC(addr: number): void {
         this.PC = addr;
-        console.log("SET PC: ", this.PC);
+        //console.log("SET PC: ", Util.hex(this.PC));
     }
 
     public getPC(): number {
@@ -142,7 +160,7 @@ export class CPU {
     public setAreg(value: number): void {
         this.Areg = value & 0xFF;
         this.setFlags(value);
-        console.log("SET AREG: ", this.Areg);
+        //console.log("SET AREG: ", Util.hex(this.Areg));
     }
 
     public setXreg(value: number): void {

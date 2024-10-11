@@ -16,4 +16,12 @@ export abstract class Memory {
     public write(value: number, address : number): void {
         this.memory[address] = value;
     }
+
+    public getMemory(){
+        return this.memory;
+    }
+    
+    public setMemory(bytes : Uint8Array){
+        this.memory = bytes;
+    }
 }

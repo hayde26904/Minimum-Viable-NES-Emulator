@@ -17,5 +17,8 @@
   },
   "version": "1.0.0",
   "description": "My webpack project",
-  "name": "my-webpack-project"
+  "name": "my-webpack-project",
+  "dependencies": {
+    "file-loader": "^6.2.0"
+  }
 }

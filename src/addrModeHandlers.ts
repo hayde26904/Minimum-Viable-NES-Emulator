@@ -32,11 +32,11 @@ export function absolute(ram : RAM, cpu : CPU, args : Uint8Array, argType : numb
 }
 
 export function absoluteX(ram : RAM, cpu : CPU, args : Uint8Array, argType : number) : number {
-    return Util.bytesToAddr(args[0], args[1]);
+    return Util.bytesToAddr(args[0], args[1]) + cpu.getXreg();
 }
 
 export function absoluteY(ram : RAM, cpu : CPU, args : Uint8Array, argType : number) : number {
-    return Util.bytesToAddr(args[0], args[1]);
+    return Util.bytesToAddr(args[0], args[1]) + cpu.getYreg();
 }
 
 export function accumulator(ram : RAM, cpu : CPU, args : Uint8Array, argType : number) : number{
