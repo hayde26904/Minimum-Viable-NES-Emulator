@@ -17,11 +17,15 @@ export abstract class Memory {
         this.memory[address] = value;
     }
 
-    public getMemory(){
+    public getSize() : number{
+        return this.memory.length;
+    }
+
+    public getMemory() : Uint8Array{
         return this.memory;
     }
     
-    public setMemory(bytes : Uint8Array){
+    public setMemory(bytes : Uint8Array) : void {
         this.memory = bytes;
     }
 }

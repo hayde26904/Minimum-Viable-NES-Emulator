@@ -3,6 +3,7 @@ import { opMap } from "./operation";
 import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as addrModeHandlers from "./addrModeHandlers";
+import * as headerParser from "./headerParser";
 import { argTypes } from "./operation";
 import { Util } from "./util";
 
@@ -63,6 +64,7 @@ export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> 
 export class CPU {
 
     private ram: RAM;
+    private stack: RAM;
     private Areg: number;
     private Xreg: number;
     private Yreg: number;
@@ -71,11 +73,12 @@ export class CPU {
     private Cflag: boolean;
     private Zflag: boolean;
     private Nflag: boolean;
-    private overflow: boolean;
+    public overflow: boolean;
 
     constructor() {
 
         this.ram = new RAM(0xffff);
+        this.stack = new RAM(0x100); // need an extra one because 0 indexing
 
         this.Areg = 0;
         this.Xreg = 0;
@@ -88,14 +91,24 @@ export class CPU {
     }
 
     public loadProgram(rom: ROM): void {
-        let romBytes = rom.getMemory().slice(16); // THIS WILL NOT BE HARDCODED IN THE FUTURE
-        console.log(romBytes);
-        let prgStartAddr = this.PC = Util.bytesToAddr(romBytes[0x7ffa], romBytes[0x7ffb]);
-        console.log(Util.hex(prgStartAddr));
+        const romInfo = headerParser.parseiNES1(rom);
+        const romBytes = rom.getMemory().slice(16);
 
-        for(let i = 0; i < romBytes.length; i++){
-            this.ram.write(romBytes[i], prgStartAddr + i);
+        console.log(romInfo);
+
+        for(let i = 0; i < romBytes.length; i++){ // this only works for mario
+            this.ram.write(romBytes[i], 0x8000 + i);
         }
+
+        console.log(this.ram.getMemory());
+
+        const NMI = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
+        const reset = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
+
+        console.log(`RESET: ${Util.hex(reset)}`);
+        console.log(`NMI: ${Util.hex(NMI)}`);
+
+        this.PC = reset;
     }
 
     public reset(): void {
@@ -140,8 +153,8 @@ export class CPU {
 
             console.log(`${opName} ${Util.hex(arg)}`);
 
-            opMethod(this, ram, arg);
             this.PC += opSize;
+            opMethod(this, ram, arg);
         } else {
             console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
@@ -155,6 +168,15 @@ export class CPU {
 
     public getPC(): number {
         return this.PC;
+    }
+
+    public setSP(value: number): void {
+        this.SP = value & 0xFF;
+        console.log("SET SP: ", Util.hex(this.SP));
+    }
+
+    public getSP(): number {
+        return this.SP;
     }
 
     public setAreg(value: number): void {
@@ -183,6 +205,19 @@ export class CPU {
 
     public getYreg(): number {
         return this.Yreg;
+    }
+
+    public pushToStack(value : number): void{
+        this.SP--;
+        this.stack.write(value, this.getSP());
+        console.log(`SP: ${Util.hex(this.SP)}`);
+    }
+
+    public pullFromStack() : number {
+        let value = this.stack.read(this.getSP());
+        this.SP++;
+        console.log(`SP: ${Util.hex(this.SP)}`);
+        return value;
     }
 
     public setFlags(value: number): void {
