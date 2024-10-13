@@ -9,11 +9,15 @@ export class Util {
         return new Uint8Array([lo, hi]);
     }
 
+    public static Uint8ArrayToHex(arr : Uint8Array) {
+        return Array.from(arr).map(byte => byte.toString(16).padStart(2, '0')).join(' ');
+    }
+
     public static hex(value : number) : string {
         if(value === null){
             return "none";
         } else {
-            return value.toString(16).toUpperCase();
+            return value.toString(16).toUpperCase().padStart(2, '0');
         }
     }
 }

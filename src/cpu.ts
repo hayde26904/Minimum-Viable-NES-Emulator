@@ -93,11 +93,14 @@ export class CPU {
     public loadProgram(rom: ROM): void {
         const romInfo = headerParser.parseiNES1(rom);
         const romBytes = rom.getMemory().slice(16);
+        const prg = new ROM(romBytes.slice(0, romInfo.prgRomSize));
+        const chr = new ROM(romBytes.slice(romInfo.prgRomSize, romBytes.length - 1))
 
         console.log(romInfo);
+        console.log(Util.Uint8ArrayToHex(prg.getMemory()));
 
-        for(let i = 0; i < romBytes.length; i++){ // this only works for mario
-            this.ram.write(romBytes[i], 0x8000 + i);
+        for(let i = 0; i < 0x7fff; i++){
+            this.ram.write(prg.read(i % prg.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
         }
 
         console.log(this.ram.getMemory());
