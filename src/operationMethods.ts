@@ -67,6 +67,26 @@ export function tsx(cpu: CPU, ram: RAM, arg: number) : void {
     //console.log(`Stored SP ${cpu.getSP()} into X`);
 }
 
+export function inc(cpu: CPU, ram: RAM, arg: number) : void {
+    ram.write(ram.read(arg) + 1, arg);
+    //console.log(`Incremented ${arg}`);
+}
+
+export function dec(cpu: CPU, ram: RAM, arg: number) : void {
+    ram.write(ram.read(arg) - 1, arg);
+    //console.log(`Decremented ${arg}`);
+}
+
+export function inx(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setXreg(cpu.getXreg() + 1);
+    //console.log(`Incremented X`);
+}
+
+export function dex(cpu: CPU, ram: RAM, arg: number) : void {
+    ram.write(ram.read(arg) - 1, arg);
+    //console.log(`Decremented X`);
+}
+
 export function jmp(cpu: CPU, ram: RAM, arg: number) : void {
     cpu.setPC(arg);
     //console.log(`Jumped to ${Util.hex(arg)}`);

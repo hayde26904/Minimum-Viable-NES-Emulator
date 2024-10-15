@@ -1,5 +1,5 @@
 import { Memory } from "./memory";
-import { opMap } from "./operation";
+import { ops } from "./operation";
 import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as addrModeHandlers from "./addrModeHandlers";
@@ -73,7 +73,6 @@ export class CPU {
     private Cflag: boolean;
     private Zflag: boolean;
     private Nflag: boolean;
-    public overflow: boolean;
 
     constructor() {
 
@@ -129,10 +128,10 @@ export class CPU {
 
         let ram = this.ram;
         let opcode = ram.read(this.PC);
+        let operation = ops.find(op => op.opCodes.includes(opcode));
 
-        if(opMap.has(opcode)){
-
-            let operation = opMap.get(opcode);
+        if(operation){
+            
             let opName = operation.name;
             let opMethod = operation.method;
             let opAddrMode = operation.addrMode;
@@ -223,12 +222,18 @@ export class CPU {
         return value;
     }
 
+    public setCarry(){
+        this.Cflag = true;
+    }
+
+    public clearCarry(){
+        this.Cflag = false;
+    }
+
     public setFlags(value: number): void {
         if(value === -1) return;
-        let val = value;
-        this.Cflag = this.overflow;
-        this.Zflag = val === 0;
-        this.Nflag = (val & 0x80) === 0x80;
+        this.Zflag = value === 0;
+        this.Nflag = (value & 0x80) === 0x80;
     };
 
     public getFlags(): CPUflags {
