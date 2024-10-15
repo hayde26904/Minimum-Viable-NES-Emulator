@@ -83,8 +83,18 @@ export function inx(cpu: CPU, ram: RAM, arg: number) : void {
 }
 
 export function dex(cpu: CPU, ram: RAM, arg: number) : void {
-    ram.write(ram.read(arg) - 1, arg);
+    cpu.setXreg(cpu.getXreg() - 1);
     //console.log(`Decremented X`);
+}
+
+export function iny(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setYreg(cpu.getYreg() + 1);
+    //console.log(`Incremented Y`);
+}
+
+export function dey(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setYreg(cpu.getYreg() - 1);
+    //console.log(`Decremented Y`);
 }
 
 export function jmp(cpu: CPU, ram: RAM, arg: number) : void {

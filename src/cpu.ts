@@ -134,8 +134,9 @@ export class CPU {
             
             let opName = operation.name;
             let opMethod = operation.method;
-            let opAddrMode = operation.addrMode;
-            let opArgType = operation.argType;
+            let opcodeIndex = operation.opCodes.indexOf(opcode);
+            let opAddrMode = operation.addrModes[opcodeIndex];
+            let opArgType = operation.argTypes[opcodeIndex];
             let opSize = addrModeSizeMap.get(opAddrMode);
             let numArgs = opSize - 1;
             let args = new Uint8Array(numArgs);
