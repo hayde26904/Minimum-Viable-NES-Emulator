@@ -126,12 +126,14 @@ export function clc(cpu: CPU, ram: RAM, arg: number) : void {
 export function adc(cpu: CPU, ram: RAM, arg: number) : void {
     let c = Number(cpu.getFlags().C);
     cpu.setAreg(cpu.getAreg() + arg + c);
+    cpu.clearCarry();
     //console.log(`Added ${arg} to A`);
 }
 
 export function sbc(cpu: CPU, ram: RAM, arg: number) : void {
-    let c = Number(cpu.getFlags().C);
+    let c = Number(!cpu.getFlags().C);
     cpu.setAreg(cpu.getAreg() - arg - c);
+    cpu.setCarry();
     //console.log(`Subtracted ${arg} from A`);
 }
 
