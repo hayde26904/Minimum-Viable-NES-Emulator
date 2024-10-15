@@ -113,6 +113,28 @@ export function jsr(cpu: CPU, ram: RAM, arg: number) : void {
     //console.log(`Jumped to subroutine ${Util.hex(arg)} from ${Util.hex(Util.bytesToAddr(lo, hi))}`);
 }
 
+export function sec(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setCarry();
+    //console.log(`Set Carry`);
+}
+
+export function clc(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.clearCarry();
+    //console.log(`Cleared Carry`);
+}
+
+export function adc(cpu: CPU, ram: RAM, arg: number) : void {
+    let c = Number(cpu.getFlags().C);
+    cpu.setAreg(cpu.getAreg() + arg + c);
+    //console.log(`Added ${arg} to A`);
+}
+
+export function sbc(cpu: CPU, ram: RAM, arg: number) : void {
+    let c = Number(cpu.getFlags().C);
+    cpu.setAreg(cpu.getAreg() - arg - c);
+    //console.log(`Subtracted ${arg} from A`);
+}
+
 export function rts(cpu: CPU, ram: RAM, arg: number) : void {
     let lo = cpu.pullFromStack();
     let hi = cpu.pullFromStack();

@@ -198,6 +198,39 @@ export const ops: Array<Operation> = [
         opCodes: [0x88],
         addrModes: [addrModes.IMPLICIT],
         argTypes: [null]
-    }
+    },
+
+    {
+        name: "sec",
+        method: opMethods.sec,
+        opCodes: [0x38],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null]
+    },
+
+    {
+        name: "clc",
+        method: opMethods.clc,
+        opCodes: [0x18],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null]
+    },
+
+    {
+        name: "adc",
+        method: opMethods.adc,
+        opCodes: [0x69, 0x65, 0x75, 0x6D, 0x7D, 0x79, 0x61, 0x71],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer]
+
+    },
+
+    {
+        name: "sbc",
+        method: opMethods.sbc,
+        opCodes: [0xE9, 0xE5, 0xF5, 0xED, 0xFD, 0xF9, 0xE1, 0xF1],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer]
+    },
 
 ];

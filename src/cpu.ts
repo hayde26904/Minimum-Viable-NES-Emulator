@@ -41,8 +41,8 @@ export const addrModeSizeMap : Map<number,number> = new Map<number,number>([
     [addrModes.ACCUMULATOR, 1],
     [addrModes.RELATIVE, 2],
     [addrModes.INDIRECT, 3],
-    [addrModes.INDIRECT_X, 3],
-    [addrModes.INDIRECT_Y, 3]
+    [addrModes.INDIRECT_X, 2],
+    [addrModes.INDIRECT_Y, 2]
 ]);
 
 export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> = new Map<number, addrModeHandlers.addrModeHandler>([
@@ -183,18 +183,19 @@ export class CPU {
     }
 
     public setAreg(value: number): void {
-        this.Areg = value & 0xFF;
         this.setFlags(value);
-        //console.log("SET AREG: ", Util.hex(this.Areg));
+        this.Areg = value & 0xFF;
+        console.log(`Set A to ${this.Areg}`);
+        console.log(`Carry: ${Number(this.Cflag)}`);
     }
 
     public setXreg(value: number): void {
-        this.Xreg = value & 0xFF;
+        this.Xreg = value & 0xFF; // ANDs it first since setting X reg shouldn't affect carry register
         this.setFlags(value);
     }
 
     public setYreg(value: number): void {
-        this.Yreg = value & 0xFF;
+        this.Yreg = value & 0xFF // ANDs it first since setting Y reg shouldn't affect carry register
         this.setFlags(value);
     }
 
@@ -232,9 +233,16 @@ export class CPU {
     }
 
     public setFlags(value: number): void {
-        if(value === -1) return;
-        this.Zflag = value === 0;
+
+        if(value > 0xFF){
+            this.Cflag = true;
+        } else if(value < 0x00){
+            this.Cflag = false;
+        }
+
+        this.Zflag = (value === 0);
         this.Nflag = (value & 0x80) === 0x80;
+
     };
 
     public getFlags(): CPUflags {
