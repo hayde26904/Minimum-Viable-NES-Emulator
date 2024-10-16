@@ -99,7 +99,7 @@ export class CPU {
         console.log(Util.Uint8ArrayToHex(prg.getMemory()));
 
         for(let i = 0; i < 0x7fff; i++){
-            this.ram.write(prg.read(i % prg.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
+            this.ram.write(prg.read(i% prg.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
         }
 
         console.log(this.ram.getMemory());
@@ -154,7 +154,7 @@ export class CPU {
                     break;
             }
 
-            console.log(`${opName} ${Util.hex(arg)}`);
+            console.log(`${Util.hex(this.PC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`);
 
             this.PC += opSize;
             opMethod(this, ram, arg);
@@ -175,7 +175,7 @@ export class CPU {
 
     public setSP(value: number): void {
         this.SP = value & 0xFF;
-        console.log("SET SP: ", Util.hex(this.SP));
+        //console.log("SET SP: ", Util.hex(this.SP));
     }
 
     public getSP(): number {
@@ -185,8 +185,8 @@ export class CPU {
     public setAreg(value: number): void {
         this.setFlags(value);
         this.Areg = value & 0xFF;
-        console.log(`Set A to ${this.Areg}`);
-        console.log(`Carry: ${Number(this.Cflag)}`);
+        //console.log(`Set A to ${this.Areg}`);
+        //console.log(`Carry: ${Number(this.Cflag)}`);
     }
 
     public setXreg(value: number): void {
@@ -214,13 +214,13 @@ export class CPU {
     public pushToStack(value : number): void{
         this.SP--;
         this.stack.write(value, this.getSP());
-        console.log(`SP: ${Util.hex(this.SP)}`);
+        //console.log(`SP: ${Util.hex(this.SP)}`);
     }
 
     public pullFromStack() : number {
         let value = this.stack.read(this.getSP());
         this.SP++;
-        console.log(`SP: ${Util.hex(this.SP)}`);
+        //console.log(`SP: ${Util.hex(this.SP)}`);
         return value;
     }
 
