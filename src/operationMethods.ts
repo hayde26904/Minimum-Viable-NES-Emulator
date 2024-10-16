@@ -174,3 +174,36 @@ export function bne(cpu: CPU, ram: RAM, arg: number) : void {
     }
     //console.log(`Branch if not equal (${Util.hex(arg)})`);
 }
+
+export function bcc(cpu: CPU, ram: RAM, arg: number) : void {
+    if(!cpu.getFlags().C){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if carry clear (${Util.hex(arg)})`);
+}
+
+export function bcs(cpu: CPU, ram: RAM, arg: number) : void {
+    if(cpu.getFlags().C){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if carry set (${Util.hex(arg)})`);
+}
+
+export function bmi(cpu: CPU, ram: RAM, arg: number) : void {
+    if(cpu.getFlags().N){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if negative (${Util.hex(arg)})`);
+}
+
+export function bpl(cpu: CPU, ram: RAM, arg: number) : void {
+    if(!cpu.getFlags().N){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if negative (${Util.hex(arg)})`);
+}
+
+export function and(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setAreg(cpu.getAreg() & arg);
+    //console.log(`AND ${arg} with A`);
+}

@@ -45,8 +45,9 @@ export function accumulator(ram : RAM, cpu : CPU, args : Uint8Array, argType : n
 
 export function relative(ram : RAM, cpu : CPU, args : Uint8Array, argType : number) : number {
     let isNegative = (args[0] & 0x80) === 0x80;
-    let offset = args[0] & 0b01111111;
-    return isNegative ? cpu.getPC() - offset : cpu.getPC() + offset;
+    //IT IS SUPPOSED TO BE 254 DO NOT TOUCH
+    let offset = isNegative ? args[0] - 254 : args[0];
+    return cpu.getPC() + offset;
 }
 
 export function indirect(ram : RAM, cpu : CPU, args : Uint8Array, argType : number) : number {

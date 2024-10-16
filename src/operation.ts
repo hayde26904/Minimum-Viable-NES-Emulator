@@ -271,6 +271,46 @@ export const ops: Array<Operation> = [
         opCodes: [0xD0],
         addrModes: [addrModes.RELATIVE],
         argTypes: [argTypes.value]
-    }
+    },
+
+    {
+        name: "bcc",
+        method: opMethods.bcc,
+        opCodes: [0x90],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    },
+
+    {
+        name: "bcs",
+        method: opMethods.bcs,
+        opCodes: [0xB0],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    },
+
+    {
+        name: "bmi",
+        method: opMethods.bmi,
+        opCodes: [0x30],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    },
+
+    {
+        name: "bpl",
+        method: opMethods.bpl,
+        opCodes: [0x10],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    },
+
+    {
+        name: "and",
+        method: opMethods.and,
+        opCodes: [0x29, 0x25, 0x35, 0x2D, 0x3D, 0x39, 0x21, 0x31],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer]
+    },
 
 ];
