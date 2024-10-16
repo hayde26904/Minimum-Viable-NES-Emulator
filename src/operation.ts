@@ -233,4 +233,44 @@ export const ops: Array<Operation> = [
         argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer]
     },
 
+    {
+        name: "cmp",
+        method: opMethods.cmp,
+        opCodes: [0xC9, 0xC5, 0xD5, 0xCD, 0xDD, 0xD9, 0xC1, 0xD1],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer, argTypes.pointer]
+    },
+
+    {
+        name: "cpx",
+        method: opMethods.cpx,
+        opCodes: [0xE0, 0xE4, 0xEC],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ABSOLUTE],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer]
+    },
+
+    {
+        name: "cpy",
+        method: opMethods.cpy,
+        opCodes: [0xC0, 0xC4, 0xCC],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ABSOLUTE],
+        argTypes: [argTypes.value, argTypes.pointer, argTypes.pointer]
+    },
+
+    {
+        name: "beq",
+        method: opMethods.beq,
+        opCodes: [0xF0],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    },
+
+    {
+        name: "bne",
+        method: opMethods.bne,
+        opCodes: [0xD0],
+        addrModes: [addrModes.RELATIVE],
+        argTypes: [argTypes.value]
+    }
+
 ];

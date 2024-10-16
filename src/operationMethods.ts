@@ -113,6 +113,15 @@ export function jsr(cpu: CPU, ram: RAM, arg: number) : void {
     //console.log(`Jumped to subroutine ${Util.hex(arg)} from ${Util.hex(Util.bytesToAddr(lo, hi))}`);
 }
 
+export function rts(cpu: CPU, ram: RAM, arg: number) : void {
+    let lo = cpu.pullFromStack();
+    let hi = cpu.pullFromStack();
+    let returnAddr = Util.bytesToAddr(lo, hi);
+
+    cpu.setPC(returnAddr);
+    console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
+}
+
 export function sec(cpu: CPU, ram: RAM, arg: number) : void {
     cpu.setCarry();
     //console.log(`Set Carry`);
@@ -137,11 +146,31 @@ export function sbc(cpu: CPU, ram: RAM, arg: number) : void {
     //console.log(`Subtracted ${arg} from A`);
 }
 
-export function rts(cpu: CPU, ram: RAM, arg: number) : void {
-    let lo = cpu.pullFromStack();
-    let hi = cpu.pullFromStack();
-    let returnAddr = Util.bytesToAddr(lo, hi);
+export function cmp(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setFlags(cpu.getAreg() - arg);
+    //console.log(`Compared A (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+}
 
-    cpu.setPC(returnAddr);
-    console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
+export function cpx(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setFlags(cpu.getXreg() - arg);
+    //console.log(`Compared X (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+}
+
+export function cpy(cpu: CPU, ram: RAM, arg: number) : void {
+    cpu.setFlags(cpu.getYreg() - arg);
+    ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+}
+
+export function beq(cpu: CPU, ram: RAM, arg: number) : void {
+    if(cpu.getFlags().Z){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if equal (${Util.hex(arg)})`);
+}
+
+export function bne(cpu: CPU, ram: RAM, arg: number) : void {
+    if(!cpu.getFlags().Z){
+        cpu.setPC(arg);
+    }
+    //console.log(`Branch if not equal (${Util.hex(arg)})`);
 }
