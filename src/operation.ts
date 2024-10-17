@@ -2,10 +2,9 @@ import { CPU } from './cpu';
 import { addrModes } from './cpu';
 import { Memory } from './memory';
 import * as opMethods from './operationMethods';
+import { operationMethod } from './operationMethods';
 import { RAM } from './ram';
 import { immediate } from './addrModeHandlers';
-
-export type operationMethod = (cpu: CPU, ram: RAM, arg: number) => void;
 
 //value is immediate value and pointer gets the value from the address
 export enum argTypes {

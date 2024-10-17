@@ -13,7 +13,17 @@ romBytes[0x8008] = 0x02;
 romBytes[0x8009] = 0x4C; //jmp $8000
 romBytes[0x800A] = 0x00;
 romBytes[0x800B] = 0x80;*/
-let nes : NES = new NES();
+
+let canvas = document.getElementById('canvas') as HTMLCanvasElement;
+let ctx = canvas.getContext('2d');
+
+canvas.width = 1280;
+canvas.height = 1120;
+
+ctx.scale(4,4);
+
+let nes : NES = new NES(ctx);
+
 document.getElementById('romInput')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
@@ -32,6 +42,7 @@ document.getElementById('romInput')?.addEventListener('change', (event) => {
       reader.readAsArrayBuffer(file);
     }
 });
+
 
 //let testRom : ROM = new ROM(romBytes);
 //let nes : NES = new NES();

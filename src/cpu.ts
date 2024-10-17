@@ -89,28 +89,12 @@ export class CPU {
         this.Nflag = false;
     }
 
-    public loadProgram(rom: ROM): void {
-        const romInfo = headerParser.parseiNES1(rom);
-        const romBytes = rom.getMemory().slice(16);
-        const prg = new ROM(romBytes.slice(0, romInfo.prgRomSize));
-        const chr = new ROM(romBytes.slice(romInfo.prgRomSize, romBytes.length - 1))
+    public readFromMem(address : number){
+        return this.ram.read(address);
+    }
 
-        console.log(romInfo);
-        console.log(Util.Uint8ArrayToHex(prg.getMemory()));
-
-        for(let i = 0; i < 0x7fff; i++){
-            this.ram.write(prg.read(i% prg.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
-        }
-
-        console.log(this.ram.getMemory());
-
-        const NMI = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
-        const reset = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
-
-        console.log(`RESET: ${Util.hex(reset)}`);
-        console.log(`NMI: ${Util.hex(NMI)}`);
-
-        this.PC = reset;
+    public writeToMem(value : number, address : number){
+        this.ram.write(value, address);
     }
 
     public reset(): void {
@@ -122,6 +106,23 @@ export class CPU {
         this.Cflag = false;
         this.Zflag = false;
         this.Nflag = false;
+    }
+
+    public loadProgram(rom: ROM): void {
+
+        for(let i = 0; i < 0x7fff; i++){
+            this.ram.write(rom.read(i % rom.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
+        }
+
+        console.log(this.ram.getMemory());
+
+        const NMI = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
+        const reset = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
+
+        console.log(`RESET: ${Util.hex(reset)}`);
+        console.log(`NMI: ${Util.hex(NMI)}`);
+
+        this.PC = reset;
     }
 
     public executeOperation(): void {
@@ -157,7 +158,7 @@ export class CPU {
             console.log(`${Util.hex(this.PC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`);
 
             this.PC += opSize;
-            opMethod(this, ram, arg);
+            opMethod(this, arg);
         } else {
             console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
