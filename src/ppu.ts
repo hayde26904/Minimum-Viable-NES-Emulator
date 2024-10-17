@@ -36,7 +36,7 @@ export class PPU {
                 // the triple for loop goes crazy
                 for(let b = 0; b < 8; b++) {
                     //Looping backwards doesn't work for some reason
-                    let bit = (row >> Math.abs(b - 7)) & 1;
+                    let bit = (row >> (7 - b)) & 1;
                     this.ctx.fillStyle = (bit) ? 'white' : 'black';
                     this.ctx.fillRect(x + b,y,1,1);
                 }
