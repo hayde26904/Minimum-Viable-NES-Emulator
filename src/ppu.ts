@@ -3,7 +3,9 @@ import { ROM } from "./rom";
 import * as reg from "./registers";
 import { Util } from "./util";
 
-const patternTable = [0x0000, 0x1FFF];
+const patternTables = [0x0000, 0x1FFF];
+const backgroundPalettes = [0x3F00, 0x3F0F];
+const spritePalettes = [0x3F10, 0x3F1F];
 
 const colors = [
     "#7C7C7C", "#0000FC", "#0000BC", "#4428BC", "#940084", "#A80020", "#A81000", "#881400",
@@ -19,6 +21,17 @@ const colors = [
 export class PPU {
     private ctx : CanvasRenderingContext2D;
     private ram : RAM;
+
+    public ctrl = 0b00000000;
+    public mask = 0b00000000;
+    public status = 0b00000000;
+    public oamDma = 0b00000000;
+    public oamAddr = 0b00000000;
+    public oamData = 0b00000000;
+    public scroll = 0b00000000;
+    public addr = 0b00000000;
+    public data = 0b00000000;
+
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
     ];
@@ -30,7 +43,7 @@ export class PPU {
 
     public loadCHR(rom : ROM){
 
-        for(let i = 0; i < patternTable[1]; i++){
+        for(let i = 0; i < patternTables[1]; i++){
             this.ram.write(rom.read(i), i);
         }
 
@@ -48,18 +61,18 @@ export class PPU {
         }
     }
 
-    public draw(){
-        for(let i = 0; i < patternTable[1]; i++){
+    private drawSprite(tile : number, xPos : number, yPos : number, attributes : number){
 
-            let chrIndex = i * 16;
+            //pattern tables start at address 0
+            let chrIndex = tile * 16;
             let chr = this.ram.getMemory().slice(chrIndex, chrIndex + 8);
             let attr = this.ram.getMemory().slice(chrIndex + 8, chrIndex + 16);
 
             for(let r = 0; r < chr.length; r++){
                 let chrRow = chr[r];
                 let attrRow = attr[r];
-                let x = (i % 16) * 8;
-                let y = r + Math.floor(i / 16) * 8;
+                let x = xPos;
+                let y = yPos + r;
 
                 // the triple for loop goes crazy
                 for(let b = 0; b < 8; b++) {
@@ -71,7 +84,17 @@ export class PPU {
                 }
                 
             }
-
-        }
     }
+
+    public draw(){
+        this.drawSprite(0, 0, 0, 0);
+        this.drawSprite(1, 8, 0, 0);
+        this.drawSprite(2, 0, 8, 0);
+        this.drawSprite(3, 8, 8, 0);
+        this.drawSprite(4, 0, 16, 0);
+        this.drawSprite(5, 8, 16, 0);
+        this.drawSprite(6, 0, 24, 0);
+        this.drawSprite(7, 8, 24, 0);
+    }
+
 }
