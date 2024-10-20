@@ -111,17 +111,28 @@ export function jsr(cpu: CPU, arg: number) : void {
     cpu.pushToStack(hi);
     cpu.pushToStack(lo);
     cpu.setPC(arg);
-    //cpu.skipPCinc = true;
     //console.log(`Jumped to subroutine ${Util.hex(arg)} from ${Util.hex(Util.bytesToAddr(lo, hi))}`);
 }
 
 export function rts(cpu: CPU, arg: number) : void {
     let lo = cpu.pullFromStack();
     let hi = cpu.pullFromStack();
+    let statusReg = cpu.pullFromStack();
+    let returnAddr = Util.bytesToAddr(lo, hi);
+
+    cpu.setStatusReg(statusReg);
+    cpu.setPC(returnAddr);
+    console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
+}
+
+export function rti(cpu: CPU, arg: number) : void {
+
+    let lo = cpu.pullFromStack();
+    let hi = cpu.pullFromStack();
     let returnAddr = Util.bytesToAddr(lo, hi);
 
     cpu.setPC(returnAddr);
-    console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
+    console.log(`Returned from interrupt to ${Util.hex(returnAddr)}`);
 }
 
 export function sec(cpu: CPU, arg: number) : void {

@@ -1,18 +1,15 @@
 import { CPU } from './cpu';
-import { NES } from './nes';
+import { PPU } from './ppu';
 import { ROM } from './rom';
-/*let romBytes = new Uint8Array(0x800C).fill(0);
-romBytes[0x8001] = 0xA9; //lda #$69
-romBytes[0x8002] = 0x69;
-romBytes[0x8003] = 0x85; //sta $01
-romBytes[0x8004] = 0x01;
-romBytes[0x8005] = 0xA5; //lda $01
-romBytes[0x8006] = 0x01;
-romBytes[0x8007] = 0x85; //sta $02
-romBytes[0x8008] = 0x02;
-romBytes[0x8009] = 0x4C; //jmp $8000
-romBytes[0x800A] = 0x00;
-romBytes[0x800B] = 0x80;*/
+import * as headerParser from "./headerParser";
+import * as reg from "./registers";
+import { Util } from './util';
+
+const TARGET_FPS = 60
+
+const CYCLES_PER_SECOND = 1789773;
+const CYCLES_PER_FRAME = 1800;
+const CYCLES_PER_NMI = 2273;
 
 let canvas = document.getElementById('canvas') as HTMLCanvasElement;
 let ctx = canvas.getContext('2d');
@@ -22,7 +19,27 @@ canvas.height = 1120;
 
 ctx.scale(4,4);
 
-let nes : NES = new NES(ctx);
+let cpu : CPU = new CPU();
+let ppu : PPU = new PPU(ctx);
+
+let currentPrgRom : ROM;
+
+function loadProgram(rom: ROM){
+
+  const romInfo = headerParser.parseiNES1(rom);
+  const romBytes = rom.getMemory().slice(16);
+  const prg = new ROM(romBytes.slice(0, romInfo.prgRomSize));
+  const chr = new ROM(romBytes.slice(romInfo.prgRomSize, romBytes.length - 1))
+
+  console.log(romInfo);
+  console.log(Util.Uint8ArrayToHex(prg.getMemory()));
+
+  cpu.reset();
+  cpu.loadProgram(prg);
+  ppu.loadCHR(chr);
+
+  currentPrgRom = rom;
+}
 
 document.getElementById('romInput')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement;
@@ -34,7 +51,8 @@ document.getElementById('romInput')?.addEventListener('change', (event) => {
         if (e.target?.result) {
           const romData = new Uint8Array(e.target.result as ArrayBuffer);
           let testRom : ROM = new ROM(romData);
-          nes.loadProgram(testRom);
+          loadProgram(testRom);
+          //setInterval(loop, 1000/60);
           loop();
         }
       };
@@ -44,11 +62,24 @@ document.getElementById('romInput')?.addEventListener('change', (event) => {
 });
 
 
-//let testRom : ROM = new ROM(romBytes);
-//let nes : NES = new NES();
-//nes.loadProgram(testRom);
+let lastFrameTime = performance.now();
 
 function loop(){
-    nes.step();
-    requestAnimationFrame(loop);
+
+  const currentTime = performance.now();
+  const deltaTime = currentTime - lastFrameTime;
+
+  const cyclesToExecute = Math.floor((CYCLES_PER_FRAME * deltaTime) / (1000 / TARGET_FPS));
+  let cyclesExecuted = 0;
+
+  while(cyclesExecuted < cyclesToExecute){
+    const cycles = cpu.executeNextOperation();
+    cyclesExecuted += cycles;
+  }
+
+  ppu.draw();
+
+  lastFrameTime = currentTime;
+  requestAnimationFrame(loop);
+
 }

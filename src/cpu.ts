@@ -11,6 +11,10 @@ export interface CPUflags {
     Z: boolean;
     N: boolean;
     C: boolean;
+    I: boolean;
+    O: boolean;
+    D: boolean;
+    B: boolean;
 }
 
 export const enum addrModes {
@@ -61,32 +65,41 @@ export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> 
     [addrModes.INDIRECT_Y, addrModeHandlers.indirectY]
 ]);
 
+const statusCbit = 0;
+const statusZbit = 1;
+const statusIbit = 2;
+const statusDbit = 3;
+const statusBbit = 4;
+const status1bit = 5;
+const statusObit = 6;
+const statusNbit = 7;
+
 export class CPU {
 
     private ram: RAM;
     private stack: RAM;
-    private Areg: number;
-    private Xreg: number;
-    private Yreg: number;
-    private PC: number;
-    private SP: number;
-    private Cflag: boolean;
-    private Zflag: boolean;
-    private Nflag: boolean;
+    private Areg: number = 0;
+    private Xreg: number = 0;
+    private Yreg: number = 0;
+    private PC: number = 0;
+    private SP: number = 0;
+    private Cflag: boolean = false;
+    private Zflag: boolean = false;
+    private Nflag: boolean = false;
+    private Iflag: boolean = false;
+    private Oflag: boolean = false;
+    private Dflag: boolean = false;
+    private Bflag: boolean = false;
+
+    private NMIvector: number = 0;
+    private resetVector: number = 0;
+    private IRQvector: number = 0;
 
     constructor() {
 
         this.ram = new RAM(0xffff);
         this.stack = new RAM(0x100); // need an extra one because 0 indexing
 
-        this.Areg = 0;
-        this.Xreg = 0;
-        this.Yreg = 0;
-        this.PC = 0;
-        this.SP = 0;
-        this.Cflag = false;
-        this.Zflag = false;
-        this.Nflag = false;
     }
 
     public readFromMem(address : number){
@@ -103,9 +116,17 @@ export class CPU {
         this.Yreg = 0;
         this.PC = 0;
         this.SP = 0;
+
         this.Cflag = false;
         this.Zflag = false;
         this.Nflag = false;
+        this.Iflag = false;
+        this.Oflag = false;
+        this.Dflag = false;
+
+        this.NMIvector = 0;
+        this.resetVector = 0;
+        this.IRQvector = 0;
     }
 
     public loadProgram(rom: ROM): void {
@@ -116,16 +137,19 @@ export class CPU {
 
         console.log(this.ram.getMemory());
 
-        const NMI = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
-        const reset = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
+        this.NMIvector = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
+        this.resetVector = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
 
-        console.log(`RESET: ${Util.hex(reset)}`);
-        console.log(`NMI: ${Util.hex(NMI)}`);
+        console.log(`RESET: ${Util.hex(this.NMIvector)}`);
+        console.log(`NMI: ${Util.hex(this.resetVector)}`);
 
-        this.PC = reset;
+        this.PC = this.resetVector;
+
+
     }
 
-    public executeOperation(): void {
+    //returns number of cycles
+    public executeNextOperation(): number {
 
         let ram = this.ram;
         let opcode = ram.read(this.PC);
@@ -138,6 +162,7 @@ export class CPU {
             let opcodeIndex = operation.opCodes.indexOf(opcode);
             let opAddrMode = operation.addrModes[opcodeIndex];
             let opArgType = operation.argTypes[opcodeIndex];
+            let opCycles = operation.cycles[opcodeIndex];
             let opSize = addrModeSizeMap.get(opAddrMode);
             let numArgs = opSize - 1;
             let args = new Uint8Array(numArgs);
@@ -147,10 +172,11 @@ export class CPU {
             }
 
             let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args, opArgType);
+
             switch (opArgType) {
                 case argTypes.value:
                     break
-                case argTypes.pointer:
+                case argTypes.reference:
                     arg = ram.read(arg);
                     break;
             }
@@ -159,10 +185,25 @@ export class CPU {
 
             this.PC += opSize;
             opMethod(this, arg);
+
+            return opCycles;
+
         } else {
             console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
+            return 1;
         }
+    }
+
+    public doNMI(){
+        if(this.Iflag) return;
+        let [lo, hi] = Util.addrToBytes(this.getPC());
+        this.setInterruptDisable();
+        this.pushToStack(this.getStatusReg());
+        this.pushToStack(hi);
+        this.pushToStack(lo);
+        this.setPC(this.NMIvector);
+
     }
 
     public setPC(addr: number): void {
@@ -212,6 +253,40 @@ export class CPU {
         return this.Yreg;
     }
 
+    public getStatusReg(): number {
+        let flags = this.getFlags();
+        let SR = 0;
+        let flagsArray = [];
+
+        flagsArray[statusZbit] = flags.Z;
+        flagsArray[statusNbit] = flags.N;
+        flagsArray[statusCbit] = flags.C;
+        flagsArray[statusIbit] = flags.I;
+        flagsArray[statusObit] = flags.O;
+        flagsArray[statusDbit] = flags.D;
+        flagsArray[statusBbit] = flags.B;
+        flagsArray[status1bit] = true;
+
+        flagsArray.forEach((value, i) => { // convert array of booleans to bits
+            if (value) {
+                SR |= (1 >> i);
+            }
+        });
+
+        return SR;
+
+    }
+
+    public setStatusReg(byte : number) : void{
+            this.Zflag = Boolean((byte >> statusZbit) & 1);
+            this.Nflag = Boolean((byte >> statusNbit) & 1);
+            this.Cflag = Boolean((byte >> statusCbit) & 1);
+            this.Iflag = Boolean((byte >> statusIbit) & 1);
+            this.Oflag = Boolean((byte >> statusObit) & 1);
+            this.Dflag = Boolean((byte >> statusDbit) & 1);
+            this.Bflag = Boolean((byte >> statusBbit) & 1);
+    }
+
     public pushToStack(value : number): void{
         this.SP--;
         this.stack.write(value, this.getSP());
@@ -233,6 +308,14 @@ export class CPU {
         this.Cflag = false;
     }
 
+    public setInterruptDisable(){
+        this.Iflag = true;
+    }
+
+    public clearInterruptDisable(){
+        this.Iflag = false;
+    }
+
     public setFlags(value: number): void {
 
         if(value > 0xFF){
@@ -250,7 +333,11 @@ export class CPU {
         return {
             Z: this.Zflag,
             N: this.Nflag,
-            C: this.Cflag
+            C: this.Cflag,
+            I: this.Iflag,
+            O: this.Oflag,
+            D: this.Dflag,
+            B: this.Bflag
         }
     }
 

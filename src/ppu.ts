@@ -32,6 +32,8 @@ export class PPU {
     public addr = 0b00000000;
     public data = 0b00000000;
 
+    private testX = 0;
+
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
     ];
@@ -87,14 +89,15 @@ export class PPU {
     }
 
     public draw(){
-        this.drawSprite(0, 0, 0, 0);
-        this.drawSprite(1, 8, 0, 0);
-        this.drawSprite(2, 0, 8, 0);
-        this.drawSprite(3, 8, 8, 0);
-        this.drawSprite(4, 0, 16, 0);
-        this.drawSprite(5, 8, 16, 0);
-        this.drawSprite(6, 0, 24, 0);
-        this.drawSprite(7, 8, 24, 0);
+        this.testX++;
+        this.drawSprite(0, 0 + this.testX, 0, 0);
+        this.drawSprite(1, 8 + this.testX, 0, 0);
+        this.drawSprite(2, 0 + this.testX, 8, 0);
+        this.drawSprite(3, 8 + this.testX, 8, 0);
+        this.drawSprite(4, 0 + this.testX, 16, 0);
+        this.drawSprite(5, 8 + this.testX, 16, 0);
+        this.drawSprite(6, 0 + this.testX, 24, 0);
+        this.drawSprite(7, 8 + this.testX, 24, 0);
     }
 
 }
