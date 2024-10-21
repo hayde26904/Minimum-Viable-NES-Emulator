@@ -198,7 +198,7 @@ export const ops: Array<Operation> = [
     {
         name: "inx",
         method: opMethods.inx,
-        opCodes: [0xE6],
+        opCodes: [0xE8],
         addrModes: [addrModes.IMPLICIT],
         argTypes: [null],
         cycles: [2]

@@ -55,7 +55,7 @@ export class PPU {
         let oamDmaAddr = Util.bytesToAddr(this.oamAddr, this.oamDma);
 
         for(let addr = 0; addr < this.oam.getSize(); addr++){
-            this.oam.write(addr, this.cpu.readFromMem(oamDmaAddr + addr));
+            this.oam.write(this.cpu.readFromMem(oamDmaAddr + addr), addr);
         }
     }
 
@@ -82,7 +82,7 @@ export class PPU {
     }
 
     private drawSprite(tile : number, xPos : number, yPos : number, attributes : number){
-        
+
             //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
             let chr = this.ram.getMemory().slice(chrIndex, chrIndex + 8);
@@ -110,15 +110,17 @@ export class PPU {
     }
 
     public draw(){
-
         this.copyFromOamDma();
 
-        for(let spriteIndex = 0; spriteIndex < this.oam.getSize(); spriteIndex += 4){
+        for(let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4){
+
             let tileIndex = this.oam.read(spriteIndex + 1);
             let xPos = this.oam.read(spriteIndex + 3);
             let yPos = this.oam.read(spriteIndex);
             let attributes = this.oam.read(spriteIndex + 2);
-            this.drawSprite(tileIndex, xPos, yPos, attributes)
+
+            if(tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
+            this.drawSprite(tileIndex, xPos, yPos, attributes);
         }
 
     }
