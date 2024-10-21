@@ -2,6 +2,7 @@ import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as reg from "./registers";
 import { Util } from "./util";
+import { CPU } from "./cpu";
 
 const patternTables = [0x0000, 0x1FFF];
 const backgroundPalettes = [0x3F00, 0x3F0F];
@@ -20,27 +21,25 @@ const colors = [
 
 export class PPU {
     private ctx : CanvasRenderingContext2D;
+    private cpu : CPU;
     private ram : RAM;
+    private oam : RAM;
 
-    public ctrl = 0b00000000;
-    public mask = 0b00000000;
-    public status = 0b00000000;
-    public oamDma = 0b00000000;
-    public oamAddr = 0b00000000;
-    public oamData = 0b00000000;
-    public scroll = 0b00000000;
-    public addr = 0b00000000;
-    public data = 0b00000000;
+    private oamDma : number;
+    private oamAddr : number;
+    private oamDmaSet : boolean = false;
 
-    private testX = 0;
+    private spriteZeroHit : boolean = false;
 
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
     ];
 
-    constructor(ctx : CanvasRenderingContext2D){
+    constructor(ctx : CanvasRenderingContext2D, cpu : CPU){
         this.ctx = ctx;
+        this.cpu = cpu;
         this.ram = new RAM(0x3FFF);
+        this.oam = new RAM(0xFF);
     }
 
     public loadCHR(rom : ROM){
@@ -48,6 +47,25 @@ export class PPU {
         for(let i = 0; i < patternTables[1]; i++){
             this.ram.write(rom.read(i), i);
         }
+
+    }
+
+    private copyFromOamDma(){
+        //copy from OAM DMA address in CPU memory to OAM memory
+        let oamDmaAddr = Util.bytesToAddr(this.oamAddr, this.oamDma);
+
+        for(let addr = 0; addr < this.oam.getSize(); addr++){
+            this.oam.write(addr, this.cpu.readFromMem(oamDmaAddr + addr));
+        }
+    }
+
+    private copyRegistersFromCPU(){
+        this.oamAddr = this.cpu.readFromMem(reg.OAMADDR);
+        this.oamDma = this.cpu.readFromMem(reg.OAMDMA);
+    }
+
+
+    private writeRegistersToCPU(){
 
     }
 
@@ -65,7 +83,7 @@ export class PPU {
 
     private drawSprite(tile : number, xPos : number, yPos : number, attributes : number){
 
-            //pattern tables start at address 0
+            //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
             let chr = this.ram.getMemory().slice(chrIndex, chrIndex + 8);
             let attr = this.ram.getMemory().slice(chrIndex + 8, chrIndex + 16);
@@ -76,28 +94,31 @@ export class PPU {
                 let x = xPos;
                 let y = yPos + r;
 
-                // the triple for loop goes crazy
                 for(let b = 0; b < 8; b++) {
-                    //Looping backwards doesn't work for some reason
                     let chrBit = (chrRow >> (7 - b)) & 1;
                     let attrBit = (attrRow >> (7 - b)) & 1;
                     this.ctx.fillStyle = colors[this.testPalette[this.getColorIndex(chrBit, attrBit)]];
-                    this.ctx.fillRect(x + b,y,1,1);
+                    this.ctx.fillRect(x + b, y, 1, 1);
                 }
                 
             }
     }
 
+    public tick(){
+        this.copyRegistersFromCPU();
+        this.writeRegistersToCPU();
+    }
+
     public draw(){
-        this.testX++;
-        this.drawSprite(0, 0 + this.testX, 0, 0);
-        this.drawSprite(1, 8 + this.testX, 0, 0);
-        this.drawSprite(2, 0 + this.testX, 8, 0);
-        this.drawSprite(3, 8 + this.testX, 8, 0);
-        this.drawSprite(4, 0 + this.testX, 16, 0);
-        this.drawSprite(5, 8 + this.testX, 16, 0);
-        this.drawSprite(6, 0 + this.testX, 24, 0);
-        this.drawSprite(7, 8 + this.testX, 24, 0);
+
+        for(let spriteIndex = 0; spriteIndex < this.oam.getSize(); spriteIndex += 4){
+            let tileIndex = this.oam.read(spriteIndex + 1);
+            let xPos = this.oam.read(spriteIndex + 3);
+            let yPos = this.oam.read(spriteIndex);
+            let attributes = this.oam.read(spriteIndex + 2);
+            this.drawSprite(tileIndex, xPos, yPos, attributes)
+        }
+
     }
 
 }

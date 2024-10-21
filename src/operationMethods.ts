@@ -174,6 +174,11 @@ export function cpy(cpu: CPU, arg: number) : void {
     ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
 }
 
+export function bit(cpu: CPU, arg: number) : void {
+    cpu.setFlags(cpu.getAreg() & arg);
+    ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+}
+
 export function beq(cpu: CPU, arg: number) : void {
     if(cpu.getFlags().Z){
         cpu.setPC(arg);

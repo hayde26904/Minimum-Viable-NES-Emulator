@@ -146,7 +146,7 @@ export const ops: Array<Operation> = [
         method: opMethods.jmp,
         opCodes: [0x4C, 0x6C],
         addrModes: [addrModes.ABSOLUTE, addrModes.INDIRECT],
-        argTypes: [argTypes.value, argTypes.value],
+        argTypes: [argTypes.value, argTypes.reference],
         cycles: [3,5]
     },
 
@@ -293,6 +293,15 @@ export const ops: Array<Operation> = [
         addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ABSOLUTE],
         argTypes: [argTypes.value, argTypes.reference, argTypes.reference],
         cycles: [2,3,4]
+    },
+
+    {
+        name: "bit",
+        method: opMethods.bit,
+        opCodes: [0x24, 0x2C],
+        addrModes: [addrModes.ZEROPAGE, addrModes.ABSOLUTE],
+        argTypes: [argTypes.reference, argTypes.reference],
+        cycles: [3,4]
     },
 
     {

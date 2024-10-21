@@ -140,8 +140,8 @@ export class CPU {
         this.NMIvector = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
         this.resetVector = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
 
-        console.log(`RESET: ${Util.hex(this.NMIvector)}`);
-        console.log(`NMI: ${Util.hex(this.resetVector)}`);
+        console.log(`NMI: ${Util.hex(this.NMIvector)}`);
+        console.log(`RESET: ${Util.hex(this.resetVector)}`);
 
         this.PC = this.resetVector;
 
@@ -172,19 +172,20 @@ export class CPU {
             }
 
             let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args, opArgType);
-
+            let evaluatedArg;
             switch (opArgType) {
                 case argTypes.value:
+                    evaluatedArg = arg;
                     break
                 case argTypes.reference:
-                    arg = ram.read(arg);
+                    evaluatedArg = ram.read(arg);
                     break;
             }
-
-            console.log(`${Util.hex(this.PC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`);
-
+            let oldPC = this.PC;
             this.PC += opSize;
-            opMethod(this, arg);
+            opMethod(this, evaluatedArg);
+
+            console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
 
