@@ -8,8 +8,8 @@ import { Util } from './util';
 const TARGET_FPS = 60
 
 const CYCLES_PER_SECOND = 1789773;
-const CYCLES_PER_FRAME = 27120;
-const CYCLES_PER_NMI = 2486;
+const CYCLES_PER_FRAME = 81600;
+const CYCLES_PER_NMI = 2273;
 
 let canvas = document.getElementById('canvas') as HTMLCanvasElement;
 let ctx = canvas.getContext('2d');
@@ -66,44 +66,33 @@ function loadProgram(rom: ROM){
 
 let lastFrameTime = performance.now();
 
+cpu.writeToMem(0x80, 0x2002);
+
 function loop(){
 
-  cpu.writeToMem(0x80, 0x2002);
-
   const currentTime = performance.now();
-  const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);
+  const deltaTime = currentTime - lastFrameTime;
 
   //const cyclesToExecute = Math.floor((CYCLES_PER_SECOND / TARGET_FPS) * (deltaTime / 1000));
-  const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME * deltaTime);
-  const cyclesToExecuteNMI = Math.floor(CYCLES_PER_NMI * deltaTime);
-  //const cyclesToExecuteFrame = CYCLES_PER_FRAME;
-  //const cyclesToExecuteNMI = CYCLES_PER_NMI;
+  const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME * (deltaTime / (1000 / TARGET_FPS)));
+  const cyclesToExecuteNMI = Math.floor(CYCLES_PER_NMI * (deltaTime / (1000 / TARGET_FPS)));
+  const cyclesToExecute = cyclesToExecuteFrame;
   let cyclesExecuted = 0;
-  console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
-  while(cyclesExecuted < cyclesToExecuteFrame){
+
+  /*while(cyclesExecuted < cyclesToExecute){
     const cycles = cpu.executeNextOperation();
     cyclesExecuted += cycles;
     ppu.tick();
-  }
+  }*/
 
-  cyclesExecuted = 0;
+  
+//RIZZ: I think this is the correct way to do it, but I'm not sure
+  cpu.executeNextOperation();
 
-  cpu.doNMI();
-  console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
-  while(cyclesExecuted < cyclesToExecuteNMI){
-    const cycles = cpu.executeNextOperation();
-    cyclesExecuted += cycles;
-    ppu.tick();
-
-  }
-  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
-
-  /*cpu.executeNextOperation();
-  ppu.tick();*/
+  ppu.tick();
   ppu.draw();
 
   lastFrameTime = currentTime;
-  console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
   requestAnimationFrame(loop);
 
 }
