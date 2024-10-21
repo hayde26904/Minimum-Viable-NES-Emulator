@@ -86,7 +86,7 @@ function loop(){
   }*/
 
   
-
+//RIZZ: I think this is the correct way to do it, but I'm not sure
   cpu.executeNextOperation();
 
   ppu.tick();

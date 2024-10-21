@@ -82,7 +82,7 @@ export class PPU {
     }
 
     private drawSprite(tile : number, xPos : number, yPos : number, attributes : number){
-
+        
             //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
             let chr = this.ram.getMemory().slice(chrIndex, chrIndex + 8);
@@ -110,6 +110,8 @@ export class PPU {
     }
 
     public draw(){
+
+        this.copyFromOamDma();
 
         for(let spriteIndex = 0; spriteIndex < this.oam.getSize(); spriteIndex += 4){
             let tileIndex = this.oam.read(spriteIndex + 1);
