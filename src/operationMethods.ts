@@ -175,8 +175,10 @@ export function cpy(cpu: CPU, arg: number) : void {
 }
 
 export function bit(cpu: CPU, arg: number) : void {
-    cpu.setFlags(cpu.getAreg() & arg);
-    ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+    cpu.setFlags(arg);
+    if((arg & 0x80) === 0x80) cpu.setNegative(); else cpu.clearNegative();
+    if((arg & 0x40) === 0x40) cpu.setOverflow(); else cpu.clearOverflow();
+    ///console.log(`BIT with ${Util.hex(arg)}`);
 }
 
 export function beq(cpu: CPU, arg: number) : void {

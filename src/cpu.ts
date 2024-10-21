@@ -185,7 +185,7 @@ export class CPU {
             this.PC += opSize;
             opMethod(this, evaluatedArg);
 
-            console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
+            //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
 
@@ -204,7 +204,6 @@ export class CPU {
         this.pushToStack(hi);
         this.pushToStack(lo);
         this.setPC(this.NMIvector);
-
     }
 
     public setPC(addr: number): void {
@@ -307,6 +306,30 @@ export class CPU {
 
     public clearCarry(){
         this.Cflag = false;
+    }
+
+    public setZero(){
+        this.Zflag = true;
+    }
+
+    public clearZero(){
+        this.Zflag = false;
+    }
+
+    public setNegative(){
+        this.Nflag = true;
+    }
+
+    public clearNegative(){
+        this.Nflag = false;
+    }
+
+    public setOverflow(){
+        this.Oflag = true;
+    }
+
+    public clearOverflow(){
+        this.Oflag = false;
     }
 
     public setInterruptDisable(){
