@@ -196,7 +196,7 @@ export class CPU {
         }
     }
 
-    public doNMI(){
+    public NMI(){
         if(this.Iflag) return;
         let [lo, hi] = Util.addrToBytes(this.getPC());
         this.setInterruptDisable();

@@ -24,7 +24,7 @@ let ppu : PPU = new PPU(ctx, cpu);
 
 let currentPrgRom : ROM;
 
-document.getElementById('nmi-btn')?.addEventListener('click', cpu.doNMI.bind(cpu));
+document.getElementById('nmi-btn')?.addEventListener('click', cpu.NMI.bind(cpu));
 
 document.getElementById('romInput')?.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
@@ -76,9 +76,9 @@ function loop(){
   //const cyclesToExecute = Math.floor((CYCLES_PER_SECOND / TARGET_FPS) * (deltaTime / 1000));
   const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME * deltaTime);
   const cyclesToExecuteNMI = Math.floor(CYCLES_PER_NMI * deltaTime);
-  //const cyclesToExecuteFrame = CYCLES_PER_FRAME;
-  //const cyclesToExecuteNMI = CYCLES_PER_NMI;
   let cyclesExecuted = 0;
+
+
   console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
   while(cyclesExecuted < cyclesToExecuteFrame){
     const cycles = cpu.executeNextOperation();
@@ -86,9 +86,11 @@ function loop(){
     ppu.tick();
   }
 
+  console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
+
   cyclesExecuted = 0;
 
-  cpu.doNMI();
+  cpu.NMI();
   console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
   while(cyclesExecuted < cyclesToExecuteNMI){
     const cycles = cpu.executeNextOperation();
@@ -103,7 +105,6 @@ function loop(){
   ppu.draw();
 
   lastFrameTime = currentTime;
-  console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
   requestAnimationFrame(loop);
 
 }
