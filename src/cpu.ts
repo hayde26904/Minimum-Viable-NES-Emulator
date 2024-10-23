@@ -6,6 +6,8 @@ import * as addrModeHandlers from "./addrModeHandlers";
 import * as headerParser from "./headerParser";
 import { argTypes } from "./operation";
 import { Util } from "./util";
+import * as reg from "./registers";
+import { PPU } from "./ppu";
 
 export interface CPUflags {
     Z: boolean;
@@ -78,6 +80,7 @@ export class CPU {
 
     private ram: RAM;
     private stack: RAM;
+    private ppu: PPU;
     private Areg: number = 0;
     private Xreg: number = 0;
     private Yreg: number = 0;
@@ -103,10 +106,22 @@ export class CPU {
     }
 
     public readFromMem(address : number){
+
+        //I miss you Addy
+        const abc = 0x2007
+        const dec = 0x4014
+        const addy = address;
+
         return this.ram.read(address);
     }
 
     public writeToMem(value : number, address : number){
+
+        //I miss you Addy
+        const abc = 0x2007
+        const dec = 0x4014
+        const addy = address;
+
         this.ram.write(value, address);
     }
 

@@ -60,7 +60,7 @@ export class PPU {
         }
     }
 
-    private copyRegistersFromCPU(){
+    public copyRegistersFromCPU(cpuRam : RAM){
         this.oamAddr = this.cpu.readFromMem(reg.OAMADDR);
         this.oamDma = this.cpu.readFromMem(reg.OAMDMA);
 
@@ -70,7 +70,7 @@ export class PPU {
     }
 
 
-    private writeRegistersToCPU(){
+    public writeRegistersToCPU(cpuRam : RAM){
 
     }
 
@@ -110,8 +110,6 @@ export class PPU {
     }
 
     public tick(){
-        this.copyRegistersFromCPU();
-        this.writeRegistersToCPU();
     }
 
     public draw(){
