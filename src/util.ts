@@ -20,4 +20,8 @@ export class Util {
             return value.toString(16).toUpperCase().padStart(2, '0');
         }
     }
+
+    public static getBit(byte : number, bit : number){
+        return (byte >> bit) & 1;
+    }
 }

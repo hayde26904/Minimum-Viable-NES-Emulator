@@ -25,12 +25,12 @@ export class PPU {
     private ram : RAM;
     private oam : RAM;
 
-    private oamDma : number;
-    private oamAddr : number;
-    private oamDmaSet : boolean = false;
+    public oamDma : number;
+    public oamAddr : number;
+    public oamDmaSet : boolean = false;
 
-    private spriteZeroHit : boolean = false;
-    private NMIenabled : boolean = true;
+    public spriteZeroHit : boolean = false;
+    public NMIenabled : boolean = true;
 
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
@@ -63,6 +63,10 @@ export class PPU {
     private copyRegistersFromCPU(){
         this.oamAddr = this.cpu.readFromMem(reg.OAMADDR);
         this.oamDma = this.cpu.readFromMem(reg.OAMDMA);
+
+        let ppuCtrl = this.cpu.readFromMem(reg.PPUCTRL);
+        this.NMIenabled = Boolean(Util.getBit(ppuCtrl, 7));
+
     }
 
 
