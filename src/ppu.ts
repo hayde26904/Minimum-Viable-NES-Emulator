@@ -30,6 +30,7 @@ export class PPU {
     private oamDmaSet : boolean = false;
 
     private spriteZeroHit : boolean = false;
+    private NMIenabled : boolean = true;
 
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
@@ -110,6 +111,9 @@ export class PPU {
     }
 
     public draw(){
+
+        this.ctx.clearRect(0,0,this.ctx.canvas.width, this.ctx.canvas.height);
+
         this.copyFromOamDma();
 
         for(let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4){

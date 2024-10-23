@@ -181,6 +181,7 @@ export class CPU {
                     evaluatedArg = ram.read(arg);
                     break;
             }
+
             let oldPC = this.PC;
             this.PC += opSize;
             opMethod(this, evaluatedArg);
@@ -290,13 +291,13 @@ export class CPU {
     public pushToStack(value : number): void{
         this.SP--;
         this.stack.write(value, this.getSP());
-        //console.log(`SP: ${Util.hex(this.SP)}`);
+        console.log(`Pushed ${Util.hex(value)} SP: ${Util.hex(this.SP)}`);
     }
 
     public pullFromStack() : number {
         let value = this.stack.read(this.getSP());
         this.SP++;
-        //console.log(`SP: ${Util.hex(this.SP)}`);
+        console.log(`SP: ${Util.hex(this.SP)}`);
         return value;
     }
 

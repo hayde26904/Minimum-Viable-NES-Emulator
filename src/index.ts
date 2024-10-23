@@ -14,10 +14,10 @@ const CYCLES_PER_NMI = 2486;
 let canvas = document.getElementById('canvas') as HTMLCanvasElement;
 let ctx = canvas.getContext('2d');
 
-canvas.width = 510;
-canvas.height = 480;
+canvas.width = 1024;
+canvas.height = 960;
 
-ctx.scale(3,3);
+ctx.scale(4,4);
 
 let cpu : CPU = new CPU();
 let ppu : PPU = new PPU(ctx, cpu);

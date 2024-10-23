@@ -129,8 +129,10 @@ export function rti(cpu: CPU, arg: number) : void {
 
     let lo = cpu.pullFromStack();
     let hi = cpu.pullFromStack();
+    let statusReg = cpu.pullFromStack();
     let returnAddr = Util.bytesToAddr(lo, hi);
 
+    cpu.setStatusReg(statusReg);
     cpu.setPC(returnAddr);
     console.log(`Returned from interrupt to ${Util.hex(returnAddr)}`);
 }
