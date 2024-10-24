@@ -4,6 +4,9 @@ import { ROM } from './rom';
 import * as headerParser from "./headerParser";
 import * as reg from "./registers";
 import { Util } from './util';
+import { Bus } from './bus';
+import { IMapper, Mapper } from './mapper';
+import { mapperMap } from './mapperMap';
 
 const TARGET_FPS = 60
 
@@ -19,8 +22,13 @@ canvas.height = 960;
 
 ctx.scale(4, 4);
 
+let mapper: Mapper;
 let cpu: CPU = new CPU();
-let ppu: PPU = new PPU(ctx, cpu);
+let ppu: PPU = new PPU(ctx);
+
+let bus: Bus = new Bus(cpu, ppu);
+cpu.setBus(bus);
+ppu.setBus(bus);
 
 let currentPrgRom: ROM;
 
@@ -56,8 +64,11 @@ function loadProgram(rom: ROM) {
   console.log(romInfo);
   console.log(Util.Uint8ArrayToHex(prg.getMemory()));
 
+  
+  mapper = mapperMap.get(romInfo.mapperNumber) as Mapper;
+  mapper.setRom(rom);
+
   cpu.reset();
-  cpu.loadProgram(prg);
   ppu.loadCHR(chr);
 
   currentPrgRom = rom;
@@ -68,7 +79,7 @@ let lastFrameTime = performance.now();
 
 function loop() {
 
-  cpu.writeToMem(0x80, 0x2002);
+  bus.writeToMem(0x80, 0x2002);
 
   const currentTime = performance.now();
   const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);

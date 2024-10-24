@@ -3,6 +3,7 @@ import { ROM } from "./rom";
 import * as reg from "./registers";
 import { Util } from "./util";
 import { CPU } from "./cpu";
+import { Bus } from "./bus";
 
 const patternTables = [0x0000, 0x1FFF];
 const backgroundPalettes = [0x3F00, 0x3F0F];
@@ -20,8 +21,10 @@ const colors = [
 ];
 
 export class PPU {
+
+    private bus : Bus;
+
     private ctx : CanvasRenderingContext2D;
-    private cpu : CPU;
     private ram : RAM;
     private oam : RAM;
 
@@ -36,11 +39,14 @@ export class PPU {
         0x12,0x16,0x27,0x18
     ];
 
-    constructor(ctx : CanvasRenderingContext2D, cpu : CPU){
+    constructor(ctx : CanvasRenderingContext2D){
         this.ctx = ctx;
-        this.cpu = cpu;
         this.ram = new RAM(0x3FFF);
         this.oam = new RAM(0xFF);
+    }
+
+    public setBus(bus: Bus): void {
+        this.bus = bus;
     }
 
     public loadCHR(rom : ROM){
@@ -51,26 +57,22 @@ export class PPU {
 
     }
 
-    private copyFromOamDma(){
+    private copyFromOamDma(cpu : CPU){
         //copy from OAM DMA address in CPU memory to OAM memory
         let oamDmaAddr = Util.bytesToAddr(this.oamAddr, this.oamDma);
 
         for(let addr = 0; addr < this.oam.getSize(); addr++){
-            this.oam.write(this.cpu.readFromMem(oamDmaAddr + addr), addr);
+            this.oam.write(cpu.readFromMem(oamDmaAddr + addr), addr);
         }
     }
 
-    public copyRegistersFromCPU(cpuRam : RAM){
-        this.oamAddr = this.cpu.readFromMem(reg.OAMADDR);
-        this.oamDma = this.cpu.readFromMem(reg.OAMDMA);
-
-        let ppuCtrl = this.cpu.readFromMem(reg.PPUCTRL);
-        this.NMIenabled = Boolean(Util.getBit(ppuCtrl, 7));
+    public readRegister(address : number){
 
     }
 
 
-    public writeRegistersToCPU(cpuRam : RAM){
+
+    public writeRegister(value : number, address : number){
 
     }
 
@@ -115,8 +117,6 @@ export class PPU {
     public draw(){
 
         this.ctx.clearRect(0,0,this.ctx.canvas.width, this.ctx.canvas.height);
-
-        this.copyFromOamDma();
 
         for(let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4){
 

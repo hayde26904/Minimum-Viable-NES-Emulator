@@ -8,6 +8,7 @@ import { argTypes } from "./operation";
 import { Util } from "./util";
 import * as reg from "./registers";
 import { PPU } from "./ppu";
+import { Bus } from "./bus";
 
 export interface CPUflags {
     Z: boolean;
@@ -78,9 +79,8 @@ const statusNbit = 7;
 
 export class CPU {
 
-    private ram: RAM;
+    private bus: Bus;
     private stack: RAM;
-    private ppu: PPU;
     private Areg: number = 0;
     private Xreg: number = 0;
     private Yreg: number = 0;
@@ -100,29 +100,12 @@ export class CPU {
 
     constructor() {
 
-        this.ram = new RAM(0xffff);
-        this.stack = new RAM(0x100); // need an extra one because 0 indexing
+        this.stack = new RAM(0x100);
 
     }
 
-    public readFromMem(address : number){
-
-        //I miss you Addy
-        const abc = 0x2007
-        const dec = 0x4014
-        const addy = address;
-
-        return this.ram.read(address);
-    }
-
-    public writeToMem(value : number, address : number){
-
-        //I miss you Addy
-        const abc = 0x2007
-        const dec = 0x4014
-        const addy = address;
-
-        this.ram.write(value, address);
+    public setBus(bus: Bus): void {
+        this.bus = bus;
     }
 
     public reset(): void {
@@ -146,19 +129,13 @@ export class CPU {
 
     public loadProgram(rom: ROM): void {
 
-        for(let i = 0; i < 0x7fff; i++){
-            this.ram.write(rom.read(i % rom.getSize()), 0x8000 + i); // mirrors it if it doesn't fill in one go
-        }
-
-        console.log(this.ram.getMemory());
-
-        this.NMIvector = Util.bytesToAddr(this.ram.read(0xfffa), this.ram.read(0xfffb));
-        this.resetVector = Util.bytesToAddr(this.ram.read(0xfffc), this.ram.read(0xfffd));
+        /*this.NMIvector = Util.bytesToAddr(this.bus.read(0xfffa), this.bus.read(0xfffb));
+        this.resetVector = Util.bytesToAddr(this.bus.read(0xfffc), this.bus.read(0xfffd));
 
         console.log(`NMI: ${Util.hex(this.NMIvector)}`);
         console.log(`RESET: ${Util.hex(this.resetVector)}`);
 
-        this.PC = this.resetVector;
+        this.PC = this.resetVector;*/
 
 
     }
@@ -166,8 +143,7 @@ export class CPU {
     //returns number of cycles
     public executeNextOperation(): number {
 
-        let ram = this.ram;
-        let opcode = ram.read(this.PC);
+        let opcode = this.bus.read(this.PC);
         let operation = ops.find(op => op.opCodes.includes(opcode));
 
         if(operation){
@@ -183,17 +159,17 @@ export class CPU {
             let args = new Uint8Array(numArgs);
 
             for(let i = 0; i < args.length; i++){
-                args[i] = ram.read(this.PC + i + 1);
+                args[i] = this.bus.read(this.PC + i + 1);
             }
 
-            let arg = addrModeHandlerMap.get(opAddrMode)(ram, this, args, opArgType);
+            let arg = addrModeHandlerMap.get(opAddrMode)(this.bus, this, args, opArgType);
             let evaluatedArg;
             switch (opArgType) {
                 case argTypes.value:
                     evaluatedArg = arg;
                     break
                 case argTypes.reference:
-                    evaluatedArg = ram.read(arg);
+                    evaluatedArg = this.bus.read(arg);
                     break;
             }
 
