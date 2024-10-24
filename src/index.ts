@@ -5,7 +5,7 @@ import * as headerParser from "./headerParser";
 import * as reg from "./registers";
 import { Util } from './util';
 import { Bus } from './bus';
-import { IMapper, Mapper } from './mapper';
+import { Mapper } from './mapper';
 import { mapperMap } from './mapperMap';
 
 const TARGET_FPS = 60
@@ -66,7 +66,8 @@ function loadProgram(rom: ROM) {
 
   
   mapper = mapperMap.get(romInfo.mapperNumber) as Mapper;
-  mapper.setRom(rom);
+  mapper.setPrgRom(prg);
+  bus.setMapper(mapper);
 
   cpu.reset();
   ppu.loadCHR(chr);

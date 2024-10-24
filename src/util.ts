@@ -21,7 +21,37 @@ export class Util {
         }
     }
 
-    public static getBit(byte : number, bit : number){
+    public static getBit(byte : number, bit : number) : number{
         return (byte >> bit) & 1;
+    }
+
+    //bitmask matches order that booleans come in array. true true false false = 1100
+    public static boolsToBitmask(bools : Array<boolean>) : number{
+        let mask = 0;
+        let startingPoint = 1 << bools.length - 1;
+
+        bools.forEach((value, i) => {
+            if (value) {
+                mask = mask ^ (startingPoint >> i);
+            }
+        });
+
+        return mask;
+    }
+
+    public static bitmaskToBools(bitmask : number) : Array<boolean> {
+        let len = Math.floor(Math.log2(bitmask)) + 1;
+        let startingPoint = 1 << len - 1;
+        let bools = new Array();
+
+        for(let i = 0; i < len; i++){
+            if ((bitmask >> (len - 1 - i)) & 1) {
+                bools[i] = Boolean(bitmask ^ (startingPoint >> i));
+            } else {
+                bools[i] = false;
+            }
+        }
+
+        return bools;
     }
 }

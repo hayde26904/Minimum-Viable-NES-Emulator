@@ -57,13 +57,15 @@ export class PPU {
 
     public loadCHR(rom : ROM){
 
-        for(let i = 0; i < patternTables[1]; i++){
-            this.ram.write(rom.read(i), i);
+        for(let i = 0; i < this.patternTable0.getSize(); i++){
+            //both pattern tables are the same size, and they never won't be the same size, so it ok
+            this.patternTable0.write(rom.read(i), i)
+            this.patternTable1.write(rom.read(i), i + this.patternTable0.getSize());
         }
 
     }
 
-    private copyFromOamDma(){
+    private copySpritesFromOamDma(){
         //copy from OAM DMA address in CPU memory to OAM memory
         let oamDmaAddr = Util.bytesToAddr(this.oamAddr, this.oamDma);
 
@@ -73,7 +75,14 @@ export class PPU {
     }
 
     public readRegister(address : number){
-        
+
+        switch(address){
+            case reg.PPUCTRL:
+                return 
+                break;
+        }
+
+        return 0;
     }
 
 
@@ -98,8 +107,8 @@ export class PPU {
 
             //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
-            let chr = this.ram.getMemory().slice(chrIndex, chrIndex + 8);
-            let attr = this.ram.getMemory().slice(chrIndex + 8, chrIndex + 16);
+            let chr = this.patternTable0.getMemory().slice(chrIndex, chrIndex + 8);
+            let attr = this.patternTable0.getMemory().slice(chrIndex + 8, chrIndex + 16);
 
             for(let r = 0; r < chr.length; r++){
                 let chrRow = chr[r];
@@ -123,6 +132,7 @@ export class PPU {
     public draw(){
 
         this.ctx.clearRect(0,0,this.ctx.canvas.width, this.ctx.canvas.height);
+        this.copySpritesFromOamDma();
 
         for(let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4){
 

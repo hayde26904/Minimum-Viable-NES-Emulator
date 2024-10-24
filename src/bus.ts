@@ -15,6 +15,10 @@ export class Bus {
         this.ram = new RAM(0x800);
     }
 
+    public setMapper(mapper : Mapper){
+        this.mapper = mapper;
+    }
+
     public read(address : number) : number {
         if(address < 0x2000){
             return this.ram.read(address % 0x800);
@@ -23,6 +27,8 @@ export class Bus {
         } else if(address > 0x8000){
             return this.mapper.read(address);
         }
+
+        return 0;
     }
 
     public write(value : number, address : number){

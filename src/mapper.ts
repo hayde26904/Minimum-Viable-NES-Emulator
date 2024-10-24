@@ -6,7 +6,7 @@ export abstract class Mapper {
     constructor() {
     }
 
-    public setRom(rom : ROM) : void {
+    public setPrgRom(rom : ROM) : void {
         this.rom = rom;
     }
 

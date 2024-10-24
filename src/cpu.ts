@@ -6,8 +6,6 @@ import * as addrModeHandlers from "./addrModeHandlers";
 import * as headerParser from "./headerParser";
 import { argTypes } from "./operation";
 import { Util } from "./util";
-import * as reg from "./registers";
-import { PPU } from "./ppu";
 import { Bus } from "./bus";
 
 export interface CPUflags {
@@ -68,15 +66,6 @@ export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> 
     [addrModes.INDIRECT_Y, addrModeHandlers.indirectY]
 ]);
 
-const statusCbit = 0;
-const statusZbit = 1;
-const statusIbit = 2;
-const statusDbit = 3;
-const statusBbit = 4;
-const status1bit = 5;
-const statusObit = 6;
-const statusNbit = 7;
-
 export class CPU {
 
     private bus: Bus;
@@ -100,12 +89,20 @@ export class CPU {
 
     constructor() {
 
-        this.stack = new RAM(0x100);
+        this.stack = new RAM(0x100); // need an extra one because 0 indexing
 
     }
 
-    public setBus(bus: Bus): void {
+    public setBus(bus : Bus){
         this.bus = bus;
+    }
+
+    public readFromMem(address : number){
+        return this.bus.read(address);
+    }
+
+    public writeToMem(value : number, address : number){
+        this.bus.write(value, address);
     }
 
     public reset(): void {
@@ -129,20 +126,19 @@ export class CPU {
 
     public loadProgram(rom: ROM): void {
 
-        /*this.NMIvector = Util.bytesToAddr(this.bus.read(0xfffa), this.bus.read(0xfffb));
+        this.NMIvector = Util.bytesToAddr(this.bus.read(0xfffa), this.bus.read(0xfffb));
         this.resetVector = Util.bytesToAddr(this.bus.read(0xfffc), this.bus.read(0xfffd));
 
         console.log(`NMI: ${Util.hex(this.NMIvector)}`);
         console.log(`RESET: ${Util.hex(this.resetVector)}`);
 
-        this.PC = this.resetVector;*/
+        this.PC = this.resetVector;
 
 
     }
 
     //returns number of cycles
     public executeNextOperation(): number {
-
         let opcode = this.bus.read(this.PC);
         let operation = ops.find(op => op.opCodes.includes(opcode));
 
@@ -177,6 +173,7 @@ export class CPU {
             this.PC += opSize;
             opMethod(this, evaluatedArg);
 
+            // DO NOT ENABLE THIS AT FULL SPEED EMULATION IT WILL MAKE THE BROWSER HANG
             //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
@@ -184,7 +181,7 @@ export class CPU {
         } else {
             console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
-            return 1;
+            return 1; //1 cycle I guess
         }
     }
 
@@ -247,25 +244,8 @@ export class CPU {
 
     public getStatusReg(): number {
         let flags = this.getFlags();
-        let SR = 0;
-        let flagsArray = [];
 
-        flagsArray[statusZbit] = flags.Z;
-        flagsArray[statusNbit] = flags.N;
-        flagsArray[statusCbit] = flags.C;
-        flagsArray[statusIbit] = flags.I;
-        flagsArray[statusObit] = flags.O;
-        flagsArray[statusDbit] = flags.D;
-        flagsArray[statusBbit] = flags.B;
-        flagsArray[status1bit] = true;
-
-        flagsArray.forEach((value, i) => { // convert array of booleans to bits
-            if (value) {
-                SR |= (1 >> i);
-            }
-        });
-
-        return SR;
+        return Util.boolsToBitmask([flags.N, flags.O, true, flags.B, flags.D, flags.I, flags.Z, flags.C]);
 
     }
 
