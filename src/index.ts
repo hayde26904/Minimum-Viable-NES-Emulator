@@ -79,7 +79,7 @@ let lastFrameTime = performance.now();
 
 function loop() {
 
-  bus.writeToMem(0x80, 0x2002);
+  bus.write(0x80, 0x2002);
 
   const currentTime = performance.now();
   const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);

@@ -25,7 +25,10 @@ export class PPU {
     private bus : Bus;
 
     private ctx : CanvasRenderingContext2D;
-    private ram : RAM;
+    private patternTable0 : RAM;
+    private patternTable1 : RAM;
+    private backgroundPalette : RAM;
+    private spritePalette : RAM;
     private oam : RAM;
 
     public oamDma : number;
@@ -41,7 +44,10 @@ export class PPU {
 
     constructor(ctx : CanvasRenderingContext2D){
         this.ctx = ctx;
-        this.ram = new RAM(0x3FFF);
+        this.patternTable0 = new RAM(0x1000);
+        this.patternTable1 = new RAM(0x1000);
+        this.backgroundPalette = new RAM(0x10);
+        this.spritePalette = new RAM(0x10);
         this.oam = new RAM(0xFF);
     }
 
@@ -57,17 +63,17 @@ export class PPU {
 
     }
 
-    private copyFromOamDma(cpu : CPU){
+    private copyFromOamDma(){
         //copy from OAM DMA address in CPU memory to OAM memory
         let oamDmaAddr = Util.bytesToAddr(this.oamAddr, this.oamDma);
 
         for(let addr = 0; addr < this.oam.getSize(); addr++){
-            this.oam.write(cpu.readFromMem(oamDmaAddr + addr), addr);
+            this.oam.write(this.bus.read(oamDmaAddr + addr), addr);
         }
     }
 
     public readRegister(address : number){
-
+        
     }
 
 

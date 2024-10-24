@@ -1,5 +1,5 @@
 import { CPU } from "./cpu";
-import { IMapper } from "./mapper";
+import { Mapper } from "./mapper";
 import { PPU } from "./ppu";
 import { RAM } from "./ram";
 
@@ -7,7 +7,7 @@ export class Bus {
     private cpu : CPU;
     private ppu : PPU;
     private ram : RAM;
-    private mapper : IMapper;
+    private mapper : Mapper;
 
     constructor(cpu : CPU, ppu : PPU){
         this.cpu = cpu;
@@ -15,7 +15,7 @@ export class Bus {
         this.ram = new RAM(0x800);
     }
 
-    public read(address : number){
+    public read(address : number) : number {
         if(address < 0x2000){
             return this.ram.read(address % 0x800);
         } else if(address < 0x4000){
