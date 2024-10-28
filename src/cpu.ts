@@ -250,13 +250,8 @@ export class CPU {
     }
 
     public setStatusReg(byte : number) : void{
-            this.Zflag = Boolean((byte >> statusZbit) & 1);
-            this.Nflag = Boolean((byte >> statusNbit) & 1);
-            this.Cflag = Boolean((byte >> statusCbit) & 1);
-            this.Iflag = Boolean((byte >> statusIbit) & 1);
-            this.Oflag = Boolean((byte >> statusObit) & 1);
-            this.Dflag = Boolean((byte >> statusDbit) & 1);
-            this.Bflag = Boolean((byte >> statusBbit) & 1);
+        let guh;
+        [this.Nflag, this.Oflag, guh, this.Bflag, this.Dflag, this.Iflag, this.Zflag, this.Cflag] = Util.bitmaskToBools(byte);
     }
 
     public pushToStack(value : number): void{

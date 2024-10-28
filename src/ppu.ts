@@ -31,12 +31,35 @@ export class PPU {
     private spritePalette : RAM;
     private oam : RAM;
 
-    public oamDma : number;
-    public oamAddr : number;
-    public oamDmaSet : boolean = false;
+    private writeCounter : number = 0;
+    private scrollX : number = 0;
+    private scrollY : number = 0;
 
-    public spriteZeroHit : boolean = false;
-    public NMIenabled : boolean = true;
+    private oamDma : number;
+    private oamAddr : number;
+    private oamDmaSet : boolean = false;
+
+    private NMIenabled : boolean = true;
+    private masterSlave : boolean = false;
+    private spriteSizeMode : boolean = false;
+    private backgroundAddr : boolean = false;
+    private spriteAddr : boolean = false;
+    private vramIncrement : boolean = false;
+    private baseNametableAddr : number = 0;
+
+    private emphasizeBlue : boolean = false;
+    private emphasizeGreen : boolean = false;
+    private emphasizeRed : boolean = false;
+    private showSprites : boolean = false;
+    private showBackground : boolean = false;
+    private showLeftSprites : boolean = false;
+    private showLeftBackground : boolean = false;
+    private greyscale : boolean = false;
+
+    private inVblank : boolean = false;
+    private spriteZeroHit : boolean = false;
+    private spriteOverflow : boolean = false;
+
 
     private testPalette : number[] = [
         0x12,0x16,0x27,0x18
@@ -78,17 +101,113 @@ export class PPU {
 
         switch(address){
             case reg.PPUCTRL:
-                return 
-                break;
+                return Util.boolsToBitmask([
+                    this.NMIenabled, 
+                    this.masterSlave, 
+                    this.spriteSizeMode, 
+                    this.backgroundAddr, 
+                    this.spriteAddr, 
+                    this.vramIncrement, 
+                    Boolean(this.baseNametableAddr >> 1), //represents a 4 bit number
+                    Boolean(this.baseNametableAddr & 1)
+                ]);
+            case reg.PPUMASK:
+                return Util.boolsToBitmask([
+                    this.emphasizeBlue, 
+                    this.emphasizeGreen, 
+                    this.emphasizeRed, 
+                    this.showSprites, 
+                    this.showBackground, 
+                    this.showLeftSprites, 
+                    this.showLeftBackground, 
+                    this.greyscale
+                ]);
+            case reg.PPUSTATUS:
+
+                this.writeCounter = 0; // reset latch or something like that
+
+                return Util.boolsToBitmask([
+                    this.inVblank,
+                    this.spriteZeroHit,
+                    this.spriteOverflow,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ]);
+
+            case reg.OAMADDR:
+                return this.oamAddr;
+            case reg.OAMDATA:
+                return this.oam.read(this.oamAddr);
+            case reg.PPUSCROLL:
+                return 0;
+            case reg.PPUADDR:
+                return 0;
+            case reg.PPUDATA:
+                return 0;
+            case reg.OAMDMA:
+                return 0;
         }
 
-        return 0;
+        throw new Error(`Invalid PPU register address: ${Util.hex(address)}`);
     }
 
 
 
     public writeRegister(value : number, address : number){
+        switch(address){
+            case reg.PPUCTRL:
 
+                [
+                    this.NMIenabled, 
+                    this.masterSlave, 
+                    this.spriteSizeMode, 
+                    this.backgroundAddr, 
+                    this.spriteAddr, 
+                    this.vramIncrement
+                ] = Util.bitmaskToBools(value);
+
+                this.baseNametableAddr = value & 3;
+
+            case reg.PPUMASK:
+
+                [
+                    this.emphasizeBlue, 
+                    this.emphasizeGreen, 
+                    this.emphasizeRed, 
+                    this.showSprites, 
+                    this.showBackground, 
+                    this.showLeftSprites, 
+                    this.showLeftBackground, 
+                    this.greyscale
+                ] = Util.bitmaskToBools(value);
+
+            case reg.PPUSTATUS:
+
+                [
+                    this.inVblank,
+                    this.spriteZeroHit,
+                    this.spriteOverflow,
+
+                ] = Util.bitmaskToBools(value);
+
+            case reg.OAMADDR:
+                this.oamAddr = value;
+            case reg.OAMDATA:
+                this.oam.write(value, this.oamAddr);
+            case reg.PPUSCROLL:
+                return 0;
+            case reg.PPUADDR:
+                return 0;
+            case reg.PPUDATA:
+                return 0;
+            case reg.OAMDMA:
+                return 0;
+        }
+
+        throw new Error(`Invalid PPU register address: ${Util.hex(address)}`);
     }
 
     private getColorIndex(chrBit : number, attrBit : number){
