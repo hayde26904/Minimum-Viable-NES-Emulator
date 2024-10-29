@@ -1,5 +1,6 @@
 import { Memory } from "./memory";
 import { ops } from "./operation";
+import { opcodeMap } from "./operation";
 import { RAM } from "./ram";
 import { ROM } from "./rom";
 import * as addrModeHandlers from "./addrModeHandlers";
@@ -141,16 +142,20 @@ export class CPU {
     public executeNextOperation(): number {
 
         let opcode = this.bus.read(this.PC);
-        let operation = ops.find(op => op.opCodes.includes(opcode));
+        //let operation = ops.find(op => op.opCodes.includes(opcode));
+        let operation = opcodeMap.get(opcode);
 
         if(operation){
             
             let opName = operation.name;
             let opMethod = operation.method;
-            let opcodeIndex = operation.opCodes.indexOf(opcode);
+            /*let opcodeIndex = operation.opCodes.indexOf(opcode);
             let opAddrMode = operation.addrModes[opcodeIndex];
             let opArgType = operation.argTypes[opcodeIndex];
-            let opCycles = operation.cycles[opcodeIndex];
+            let opCycles = operation.cycles[opcodeIndex];*/
+            let opAddrMode = operation.addrMode;
+            let opArgType = operation.argType;
+            let opCycles = operation.cycles;
             let opSize = addrModeSizeMap.get(opAddrMode);
             let numArgs = opSize - 1;
             let args = new Uint8Array(numArgs);
