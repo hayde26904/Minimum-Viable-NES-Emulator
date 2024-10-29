@@ -139,6 +139,7 @@ export class CPU {
 
     //returns number of cycles
     public executeNextOperation(): number {
+
         let opcode = this.bus.read(this.PC);
         let operation = ops.find(op => op.opCodes.includes(opcode));
 
@@ -185,8 +186,7 @@ export class CPU {
         }
     }
 
-    public NMI(){
-        if(this.Iflag) return;
+    public goToNMI(){
         let [lo, hi] = Util.addrToBytes(this.getPC());
         this.setInterruptDisable();
         this.pushToStack(this.getStatusReg());

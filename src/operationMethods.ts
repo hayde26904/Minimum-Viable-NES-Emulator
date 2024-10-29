@@ -229,3 +229,13 @@ export function and(cpu: CPU, arg: number) : void {
     cpu.setAreg(cpu.getAreg() & arg);
     //console.log(`AND ${arg} with A`);
 }
+
+export function ora(cpu: CPU, arg: number) : void {
+    cpu.setAreg(cpu.getAreg() | arg);
+    //console.log(`OR ${arg} with A`);
+}
+
+export function eor(cpu: CPU, arg: number) : void {
+    cpu.setAreg(cpu.getAreg() ^ arg);
+    //console.log(`EOR ${arg} with A`);
+}

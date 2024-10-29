@@ -2,6 +2,7 @@ import { CPU } from "./cpu";
 import { Mapper } from "./mapper";
 import { PPU } from "./ppu";
 import { RAM } from "./ram";
+import { Util } from "./util";
 
 export class Bus {
     private cpu : CPU;
@@ -21,11 +22,17 @@ export class Bus {
 
     public read(address : number) : number {
         if(address < 0x2000){
+
             return this.ram.read(address % 0x800);
+
         } else if(address < 0x4000){
-            return this.ppu.readRegister(address % 8);
-        } else if(address > 0x8000){
+
+            return this.ppu.readRegister(0x2000 + (address % 8));
+
+        } else if(address >= 0x8000){ 
+
             return this.mapper.read(address);
+
         }
 
         return 0;
@@ -33,11 +40,21 @@ export class Bus {
 
     public write(value : number, address : number){
         if(address < 0x2000){
+
             this.ram.write(value, address % 0x800);
+
         } else if(address < 0x4000){
-            this.ppu.writeRegister(value, address % 8);
+
+            this.ppu.writeRegister(value, 0x2000 + (address % 8));
+
+        } else if(address === 0x4014){ //OAM DMA
+
+            this.ppu.writeRegister(value, address);
+
         } else if(address > 0x8000){
+
             this.mapper.write(value, address);
+
         }
     }
 }

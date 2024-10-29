@@ -367,4 +367,23 @@ export const ops: Array<Operation> = [
         cycles: [2,3,4,4,4,4,6,5]
     },
 
+    {
+        name: "ora",
+        method: opMethods.ora,
+        opCodes: [0x09, 0x05, 0x15, 0x0D, 0x1D, 0x19, 0x01, 0x11],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,3,4,4,4,4,6,5]
+    },
+
+    {
+        name: "eor",
+        method: opMethods.eor,
+        opCodes: [0x49, 0x45, 0x55, 0x4D, 0x5D, 0x59, 0x41, 0x51],
+        addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,3,4,4,4,4,6,5]
+    },
+
+
 ];

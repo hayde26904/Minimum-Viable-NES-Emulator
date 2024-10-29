@@ -26,13 +26,15 @@ let mapper: Mapper;
 let cpu: CPU = new CPU();
 let ppu: PPU = new PPU(ctx);
 
+ppu.setNMIhandler(cpu.goToNMI.bind(cpu));
+
 let bus: Bus = new Bus(cpu, ppu);
 cpu.setBus(bus);
 ppu.setBus(bus);
 
 let currentPrgRom: ROM;
 
-document.getElementById('nmi-btn')?.addEventListener('click', cpu.NMI.bind(cpu));
+document.getElementById('nmi-btn')?.addEventListener('click', ppu.NMI.bind(ppu));
 
 document.getElementById('romInput')?.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
@@ -64,12 +66,14 @@ function loadProgram(rom: ROM) {
   console.log(romInfo);
   console.log(Util.Uint8ArrayToHex(prg.getMemory()));
 
-  
-  mapper = mapperMap.get(romInfo.mapperNumber) as Mapper;
+
+  mapper = mapperMap.get(romInfo.mapperNumber);
   mapper.setPrgRom(prg);
   bus.setMapper(mapper);
+  console.log(mapper);
 
   cpu.reset();
+  cpu.loadProgram(prg);
   ppu.loadCHR(chr);
 
   currentPrgRom = rom;
@@ -79,8 +83,6 @@ function loadProgram(rom: ROM) {
 let lastFrameTime = performance.now();
 
 function loop() {
-
-  bus.write(0x80, 0x2002);
 
   const currentTime = performance.now();
   const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);
@@ -101,19 +103,17 @@ function loop() {
   console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
 
   cyclesExecuted = 0;
-  if (ppu.NMIenabled) {
-    
-    cpu.NMI();
-    console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
-    while (cyclesExecuted < cyclesToExecuteNMI) {
-      const cycles = cpu.executeNextOperation();
-      cyclesExecuted += cycles;
-      ppu.tick();
 
-    }
-    console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
+  ppu.NMI();
+  console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
+
+  while (cyclesExecuted < cyclesToExecuteNMI) {
+    const cycles = cpu.executeNextOperation();
+    cyclesExecuted += cycles;
+    ppu.tick();
 
   }
+  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
 
   /*cpu.executeNextOperation();
   ppu.tick();*/

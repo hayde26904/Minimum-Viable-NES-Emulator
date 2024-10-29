@@ -25,11 +25,15 @@ export class PPU {
     private bus : Bus;
 
     private ctx : CanvasRenderingContext2D;
+    private NMIhandler : CallableFunction;
     private patternTable0 : RAM;
     private patternTable1 : RAM;
     private backgroundPalette : RAM;
     private spritePalette : RAM;
     private oam : RAM;
+
+    private addr : number;
+    private data : number;
 
     private writeCounter : number = 0;
     private scrollX : number = 0;
@@ -56,7 +60,7 @@ export class PPU {
     private showLeftBackground : boolean = false;
     private greyscale : boolean = false;
 
-    private inVblank : boolean = false;
+    private inVblank : boolean = true;
     private spriteZeroHit : boolean = false;
     private spriteOverflow : boolean = false;
 
@@ -72,6 +76,10 @@ export class PPU {
         this.backgroundPalette = new RAM(0x10);
         this.spritePalette = new RAM(0x10);
         this.oam = new RAM(0xFF);
+    }
+
+    public setNMIhandler(callback : CallableFunction){
+        this.NMIhandler = callback;
     }
 
     public setBus(bus: Bus): void {
@@ -97,34 +105,22 @@ export class PPU {
         }
     }
 
+    public tick(){
+
+    }
+
+    public NMI(){
+        if(this.NMIenabled){
+            this.NMIhandler();
+        }
+    }
+
     public readRegister(address : number){
 
         switch(address){
-            case reg.PPUCTRL:
-                return Util.boolsToBitmask([
-                    this.NMIenabled, 
-                    this.masterSlave, 
-                    this.spriteSizeMode, 
-                    this.backgroundAddr, 
-                    this.spriteAddr, 
-                    this.vramIncrement, 
-                    Boolean(this.baseNametableAddr >> 1), //represents a 4 bit number
-                    Boolean(this.baseNametableAddr & 1)
-                ]);
-            case reg.PPUMASK:
-                return Util.boolsToBitmask([
-                    this.emphasizeBlue, 
-                    this.emphasizeGreen, 
-                    this.emphasizeRed, 
-                    this.showSprites, 
-                    this.showBackground, 
-                    this.showLeftSprites, 
-                    this.showLeftBackground, 
-                    this.greyscale
-                ]);
             case reg.PPUSTATUS:
 
-                this.writeCounter = 0; // reset latch or something like that
+                this.writeCounter = 0; // reset latch
 
                 return Util.boolsToBitmask([
                     this.inVblank,
@@ -141,25 +137,20 @@ export class PPU {
                 return this.oamAddr;
             case reg.OAMDATA:
                 return this.oam.read(this.oamAddr);
-            case reg.PPUSCROLL:
-                return 0;
-            case reg.PPUADDR:
-                return 0;
             case reg.PPUDATA:
-                return 0;
-            case reg.OAMDMA:
-                return 0;
+                return 0; // Not implemented yet
+            default:
+                throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
+                break;
         }
-
-        throw new Error(`Invalid PPU register address: ${Util.hex(address)}`);
     }
 
 
 
     public writeRegister(value : number, address : number){
+
         switch(address){
             case reg.PPUCTRL:
-
                 [
                     this.NMIenabled, 
                     this.masterSlave, 
@@ -170,6 +161,7 @@ export class PPU {
                 ] = Util.bitmaskToBools(value);
 
                 this.baseNametableAddr = value & 3;
+                break;
 
             case reg.PPUMASK:
 
@@ -183,31 +175,45 @@ export class PPU {
                     this.showLeftBackground, 
                     this.greyscale
                 ] = Util.bitmaskToBools(value);
-
-            case reg.PPUSTATUS:
-
-                [
-                    this.inVblank,
-                    this.spriteZeroHit,
-                    this.spriteOverflow,
-
-                ] = Util.bitmaskToBools(value);
-
+                break;
+            case reg.OAMDMA:
+                this.oamDma = value;
+                break;
             case reg.OAMADDR:
                 this.oamAddr = value;
+                break;
             case reg.OAMDATA:
-                this.oam.write(value, this.oamAddr);
-            case reg.PPUSCROLL:
-                return 0;
-            case reg.PPUADDR:
-                return 0;
-            case reg.PPUDATA:
-                return 0;
-            case reg.OAMDMA:
-                return 0;
-        }
 
-        throw new Error(`Invalid PPU register address: ${Util.hex(address)}`);
+                this.oam.write(value, this.oamAddr);
+                break;
+            case reg.PPUSCROLL:
+
+                if(this.writeCounter === 0){
+                    this.scrollX = value;
+                } else if(this.writeCounter === 1){
+                    this.scrollY = value;
+                }
+
+                this.writeCounter++;
+                if(this.writeCounter > 1) this.writeCounter = 0;
+                break;
+            case reg.PPUADDR:
+
+                if(this.writeCounter === 0){ // hi byte
+                    this.addr |= (value << 8);
+                } else if(this.writeCounter === 1){ // lo byte
+                    this.addr |= value;
+                }
+
+                this.writeCounter++;
+                if(this.writeCounter > 1) this.writeCounter = 0;
+                break;
+            case reg.PPUDATA:
+                break;
+            default:
+                throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
+                break;
+        }
     }
 
     private getColorIndex(chrBit : number, attrBit : number){
@@ -222,7 +228,7 @@ export class PPU {
         }
     }
 
-    private drawSprite(tile : number, xPos : number, yPos : number, attributes : number){
+    private drawTile(tile : number, xPos : number, yPos : number, attributes : number){
 
             //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
@@ -245,14 +251,7 @@ export class PPU {
             }
     }
 
-    public tick(){
-    }
-
-    public draw(){
-
-        this.ctx.clearRect(0,0,this.ctx.canvas.width, this.ctx.canvas.height);
-        this.copySpritesFromOamDma();
-
+    public drawSprites(){
         for(let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4){
 
             let tileIndex = this.oam.read(spriteIndex + 1);
@@ -261,8 +260,17 @@ export class PPU {
             let attributes = this.oam.read(spriteIndex + 2);
 
             if(tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
-            this.drawSprite(tileIndex, xPos, yPos, attributes);
+            this.drawTile(tileIndex, xPos, yPos, attributes);
         }
+    }
+
+    public draw(){
+
+        this.ctx.clearRect(0,0,this.ctx.canvas.width, this.ctx.canvas.height);
+        this.copySpritesFromOamDma();
+
+        this.drawSprites();
+        
 
     }
 
