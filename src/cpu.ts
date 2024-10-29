@@ -250,7 +250,7 @@ export class CPU {
     }
 
     public setStatusReg(byte : number) : void{
-        let guh;
+        let guh : boolean;
         [this.Nflag, this.Oflag, guh, this.Bflag, this.Dflag, this.Iflag, this.Zflag, this.Cflag] = Util.bitmaskToBools(byte);
     }
 
