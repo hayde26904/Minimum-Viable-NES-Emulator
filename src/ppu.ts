@@ -5,9 +5,9 @@ import { Util } from "./util";
 import { CPU } from "./cpu";
 import { Bus } from "./bus";
 
-const patternTables = [0x0000, 0x1FFF];
-const backgroundPalettes = [0x3F00, 0x3F0F];
-const spritePalettes = [0x3F10, 0x3F1F];
+const patternTablesAddrRange = [0x0000, 0x1FFF];
+const backgroundPalettesAddrRange = [0x3F00, 0x3F0F];
+const spritePalettesAddrRange = [0x3F10, 0x3F1F];
 
 const colors = [
     "#7C7C7C", "#0000FC", "#0000BC", "#4428BC", "#940084", "#A80020", "#A81000", "#881400",
@@ -26,13 +26,17 @@ export class PPU {
 
     private ctx : CanvasRenderingContext2D;
     private NMIhandler : CallableFunction;
-    private patternTable0 : RAM;
-    private patternTable1 : RAM;
-    private backgroundPalette : RAM;
-    private spritePalette : RAM;
+    private patternTables : Array<RAM>;
+    private nameTables : Array<RAM>;
+    private backgroundPalettes : RAM;
+    private spritePalettes : RAM;
     private oam : RAM;
 
-    private addr : number;
+    private memoryMap : Map<Array<number>, RAM>; // maps different RAM to different addresses
+
+    private mirroringMode : number = 0; // 0 horizontal 1 verticle
+
+    private writeAddr : number;
     private data : number;
 
     private writeCounter : number = 0;
@@ -71,11 +75,15 @@ export class PPU {
 
     constructor(ctx : CanvasRenderingContext2D){
         this.ctx = ctx;
-        this.patternTable0 = new RAM(0x1000);
-        this.patternTable1 = new RAM(0x1000);
-        this.backgroundPalette = new RAM(0x10);
-        this.spritePalette = new RAM(0x10);
+        this.patternTables = [new RAM(0x1000), new RAM(0x1000)];
+        this.nameTables = [new RAM(0x400), new RAM(0x400), new RAM(0x400), new RAM(0x400)];
+        this.backgroundPalettes = new RAM(0x10);
+        this.spritePalettes = new RAM(0x10);
         this.oam = new RAM(0xFF);
+
+        this.memoryMap = new Map([
+            [[0x0000, 0x0FFF], this.patternTables[0]];
+        ]);
     }
 
     public setNMIhandler(callback : CallableFunction){
@@ -86,12 +94,19 @@ export class PPU {
         this.bus = bus;
     }
 
+    public setMirroringMode(mode : number){
+        this.mirroringMode = mode;
+    }
+
     public loadCHR(rom : ROM){
 
-        for(let i = 0; i < this.patternTable0.getSize(); i++){
+        let patternTable0 = this.patternTables[0];
+        let patternTable1 = this.patternTables[1];
+
+        for(let i = 0; i < patternTable0.getSize(); i++){
             //both pattern tables are the same size, and they never won't be the same size, so it ok
-            this.patternTable0.write(rom.read(i), i)
-            this.patternTable1.write(rom.read(i), i + this.patternTable0.getSize());
+            patternTable0.write(rom.read(i), i)
+            patternTable1.write(rom.read(i), i + patternTable0.getSize());
         }
 
     }
@@ -105,8 +120,16 @@ export class PPU {
         }
     }
 
-    public tick(){
+    private writeData(){
 
+        let writeAddr = this.writeAddr;
+
+        
+        
+    }
+
+    public tick(){
+        this.writeData();
     }
 
     public NMI(){
@@ -200,9 +223,9 @@ export class PPU {
             case reg.PPUADDR:
 
                 if(this.writeCounter === 0){ // hi byte
-                    this.addr |= (value << 8);
+                    this.writeAddr |= (value << 8);
                 } else if(this.writeCounter === 1){ // lo byte
-                    this.addr |= value;
+                    this.writeAddr |= value;
                 }
 
                 this.writeCounter++;
@@ -232,8 +255,8 @@ export class PPU {
 
             //pattern tables start at address 0 in PPU memory
             let chrIndex = tile * 16;
-            let chr = this.patternTable0.getMemory().slice(chrIndex, chrIndex + 8);
-            let attr = this.patternTable0.getMemory().slice(chrIndex + 8, chrIndex + 16);
+            let chr = this.patternTables[0].getMemory().slice(chrIndex, chrIndex + 8);
+            let attr = this.patternTables[1].getMemory().slice(chrIndex + 8, chrIndex + 16);
 
             for(let r = 0; r < chr.length; r++){
                 let chrRow = chr[r];
