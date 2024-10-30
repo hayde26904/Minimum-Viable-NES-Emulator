@@ -26,18 +26,27 @@ export class PPU {
 
     private ctx : CanvasRenderingContext2D;
     private NMIhandler : CallableFunction;
-    private patternTables : Array<RAM>;
-    private nameTables : Array<RAM>;
-    private backgroundPalettes : RAM;
-    private spritePalettes : RAM;
-    private oam : RAM;
+    private patternTables : Array<RAM> = [new RAM(0x1000), new RAM(0x1000)];
+    private nameTables : Array<RAM> = [new RAM(0x400), new RAM(0x400), new RAM(0x400), new RAM(0x400)];
+    private backgroundPalettes : RAM = new RAM(0x10);
+    private spritePalettes : RAM = new RAM(0x10);
+    private oam : RAM = new RAM(0xFF);
 
-    private memoryMap : Map<Array<number>, RAM>; // maps different RAM to different addresses
+    // maps different RAM to different addresses
+    private memoryMap : Map<Array<number>, RAM> = new Map([
+        [[0x0000, 0x0FFF], this.patternTables[0]],
+        [[0x1000, 0x1FFF], this.patternTables[1]],
+        [[0x2000, 0x23FF], this.nameTables[0]],
+        [[0x2400, 0x27FF], this.nameTables[1]],
+        [[0x2800, 0x2BFF], this.nameTables[2]],
+        [[0x2C00, 0x2FFF], this.nameTables[3]],
+        [[0x3F00, 0x3F0F], this.backgroundPalettes],
+        [[0x3F10, 0x3F1F], this.spritePalettes]
+    ]);
 
     private mirroringMode : number = 0; // 0 horizontal 1 verticle
 
-    private writeAddr : number;
-    private data : number;
+    private writeAddr : number = null;
 
     private writeCounter : number = 0;
     private scrollX : number = 0;
@@ -75,22 +84,6 @@ export class PPU {
 
     constructor(ctx : CanvasRenderingContext2D){
         this.ctx = ctx;
-        this.patternTables = [new RAM(0x1000), new RAM(0x1000)];
-        this.nameTables = [new RAM(0x400), new RAM(0x400), new RAM(0x400), new RAM(0x400)];
-        this.backgroundPalettes = new RAM(0x10);
-        this.spritePalettes = new RAM(0x10);
-        this.oam = new RAM(0xFF);
-
-        this.memoryMap = new Map([
-            [[0x0000, 0x0FFF], this.patternTables[0]],
-            [[0x1000, 0x1FFF], this.patternTables[1]],
-            [[0x2000, 0x23FF], this.nameTables[0]],
-            [[0x2400, 0x27FF], this.nameTables[1]],
-            [[0x2800, 0x2BFF], this.nameTables[2]],
-            [[0x2C00, 0x2FFF], this.nameTables[3]],
-            [[0x3F00, 0x3F0F], this.backgroundPalettes],
-            [[0x3F10, 0x3F1F], this.spritePalettes]
-        ]);
     }
 
     public setNMIhandler(callback : CallableFunction){
@@ -127,16 +120,18 @@ export class PPU {
         }
     }
 
-    private writeData(){
+    private writeToMemory(value : number, address : number){
 
-        let writeAddr = this.writeAddr;
-
-        
+        let memoryMapArray = Array.from(this.memoryMap);
+        //finds the correct ram object from a given memory address
+        let ramLocation = memoryMapArray.find(([range, ram]) => address >= range[0] && address <= range[1])[1];
+        console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
+        ramLocation.write(value, address);
         
     }
 
     public tick(){
-        this.writeData();
+        
     }
 
     public NMI(){
@@ -178,6 +173,8 @@ export class PPU {
 
 
     public writeRegister(value : number, address : number){
+
+        console.log(`attempting to write ${Util.hex(value)} to PPU reg ${Util.hex(address)}`);
 
         switch(address){
             case reg.PPUCTRL:
@@ -237,9 +234,17 @@ export class PPU {
 
                 this.writeCounter++;
                 if(this.writeCounter > 1) this.writeCounter = 0;
+
                 break;
+
             case reg.PPUDATA:
+
+                if(this.writeAddr !== null){
+                    this.writeToMemory(value, this.writeAddr);
+                }
+
                 break;
+
             default:
                 throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
                 break;
@@ -265,6 +270,9 @@ export class PPU {
             let chr = this.patternTables[0].getMemory().slice(chrIndex, chrIndex + 8);
             let attr = this.patternTables[1].getMemory().slice(chrIndex + 8, chrIndex + 16);
 
+            let paletteIndex = (attributes & 3) * 4;
+            let palette = this.spritePalettes.readRange(paletteIndex, paletteIndex + 4);
+
             for(let r = 0; r < chr.length; r++){
                 let chrRow = chr[r];
                 let attrRow = attr[r];
@@ -274,7 +282,9 @@ export class PPU {
                 for(let b = 0; b < 8; b++) {
                     let chrBit = (chrRow >> (7 - b)) & 1;
                     let attrBit = (attrRow >> (7 - b)) & 1;
-                    this.ctx.fillStyle = colors[this.testPalette[this.getColorIndex(chrBit, attrBit)]];
+
+                    let colorId = palette[this.getColorIndex(chrBit, attrBit)];
+                    this.ctx.fillStyle = colors[colorId];
                     this.ctx.fillRect(x + b, y, 1, 1);
                 }
                 

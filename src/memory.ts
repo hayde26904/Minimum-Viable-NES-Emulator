@@ -13,6 +13,10 @@ export abstract class Memory {
         return this.memory[address];
     }
 
+    public readRange(start : number, end : number): Uint8Array {
+        return this.memory.slice(start, end);
+    }
+
     public write(value: number, address : number): void {
         this.memory[address] = value;
     }
