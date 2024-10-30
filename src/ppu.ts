@@ -82,7 +82,14 @@ export class PPU {
         this.oam = new RAM(0xFF);
 
         this.memoryMap = new Map([
-            [[0x0000, 0x0FFF], this.patternTables[0]];
+            [[0x0000, 0x0FFF], this.patternTables[0]],
+            [[0x1000, 0x1FFF], this.patternTables[1]],
+            [[0x2000, 0x23FF], this.nameTables[0]],
+            [[0x2400, 0x27FF], this.nameTables[1]],
+            [[0x2800, 0x2BFF], this.nameTables[2]],
+            [[0x2C00, 0x2FFF], this.nameTables[3]],
+            [[0x3F00, 0x3F0F], this.backgroundPalettes],
+            [[0x3F10, 0x3F1F], this.spritePalettes]
         ]);
     }
 
