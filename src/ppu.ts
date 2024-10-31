@@ -338,7 +338,7 @@ export class PPU {
         for (let i = 0; i < nametable.getSize(); i++) {
             let tileIndex = nametable.read(i);
             let xPos = (i % 32) * 8;
-            let yPos = (i / 32) * 8;
+            let yPos = Math.floor(i / 32) * 8;
 
             this.drawTile(tileIndex, xPos, yPos, 0, false, false, false, this.spritePalettes, this.patternTables[1], false);
         }
