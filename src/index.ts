@@ -20,7 +20,7 @@ let ctx = canvas.getContext('2d');
 canvas.width = 1024;
 canvas.height = 960;
 
-ctx.scale(4, 4);
+//ctx.scale(4, 4);
 
 let mapper: Mapper;
 let cpu: CPU = new CPU();

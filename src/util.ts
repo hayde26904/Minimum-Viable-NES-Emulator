@@ -21,6 +21,14 @@ export class Util {
         }
     }
 
+    public static binary(value : number) : string {
+        if(value === null){
+            return "none";
+        } else {
+            return value.toString(2);
+        }
+    }
+
     public static getBit(byte : number, bit : number) : number{
         return (byte >> bit) & 1;
     }
