@@ -180,12 +180,12 @@ export class CPU {
             opMethod(this, evaluatedArg);
 
             // DO NOT ENABLE THIS AT FULL SPEED EMULATION IT WILL MAKE THE BROWSER HANG
-            console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(evaluatedArg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
+            //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(evaluatedArg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
 
         } else {
-            console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
+            //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
             return 1; //1 cycle I guess
         }

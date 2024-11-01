@@ -86,9 +86,9 @@ export class PPU {
     private spriteOverflow: boolean = false;
 
 
-    /*private testPalette : number[] = [
+    private testPalette : number[] = [
         0x12,0x16,0x27,0x18
-    ];*/
+    ];
 
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
@@ -319,7 +319,8 @@ export class PPU {
         let chr = patternTable.getMemory().slice(chrIndex, chrIndex + 8);
         let attr = patternTable.getMemory().slice(chrIndex + 8, chrIndex + 16);
 
-        let palette = palettes.readRange(paletteIndex, paletteIndex + 4);
+        //let palette = palettes.readRange(paletteIndex, paletteIndex + 4);
+        let palette = this.testPalette;
 
         for (let r = 0; r < chr.length; r++) {
             let chrRow = chr[r];
@@ -365,7 +366,7 @@ export class PPU {
             let xPos = (i % 32) * 8;
             let yPos = Math.floor(i / 32) * 8;
 
-            this.drawTile(tileIndex, xPos, yPos, 0, false, false, false, this.spritePalettes, this.patternTables[1], false);
+            this.drawTile(tileIndex, xPos, yPos, 0, false, false, false, this.backgroundPalettes, this.patternTables[1], false);
         }
     }
 

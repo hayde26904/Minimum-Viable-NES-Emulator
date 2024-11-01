@@ -95,7 +95,7 @@ function loop() {
   let cyclesExecuted = 0;
 
 
-  /*console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
+  console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
   while (cyclesExecuted < cyclesToExecuteFrame) {
     const cycles = cpu.executeNextOperation();
     cyclesExecuted += cycles;
@@ -115,9 +115,9 @@ function loop() {
     ppu.tick();
 
   }
-  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);*/
+  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
 
-  cpu.executeNextOperation();
+  //cpu.executeNextOperation();
   //ppu.tick();
   ppu.draw();
 
