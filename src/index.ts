@@ -17,10 +17,12 @@ const CYCLES_PER_NMI = 2486;
 let canvas = document.getElementById('canvas') as HTMLCanvasElement;
 let ctx = canvas.getContext('2d');
 
-//canvas.width = 1024;
-//canvas.height = 960;
-canvas.width = 255;
-canvas.height = 240;
+ctx.imageSmoothingEnabled = false;
+
+canvas.width = 1024;
+canvas.height = 960;
+//canvas.width = 255;
+//canvas.height = 240;
 
 //ctx.scale(4, 4);
 

@@ -29,10 +29,12 @@ const colorMap = [
 
 export class PPU {
 
-    private bus: Bus;
+    public outputScaleX : number = 4;
+    public outputScaleY : number = 4;
 
     private ctx: CanvasRenderingContext2D;
     private frameBuffer: ImageData;
+    private bus: Bus;
     private NMIhandler: CallableFunction;
     private patternTables: Array<RAM> = [new RAM(0x1000), new RAM(0x1000)];
     private nameTables: Array<RAM> = [new RAM(0x400), new RAM(0x400), new RAM(0x400), new RAM(0x400)];
@@ -64,7 +66,7 @@ export class PPU {
     private oamAddr: number;
     private oamDmaSet: boolean = false;
 
-    private NMIenabled: boolean = true;
+    private NMIenabled: boolean = false;
     private masterSlave: boolean = false;
     private spriteSizeMode: boolean = false;
     private backgroundAddr: boolean = false;
@@ -93,6 +95,7 @@ export class PPU {
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
         this.frameBuffer = this.ctx.createImageData(this.ctx.canvas.width, this.ctx.canvas.height);
+
     }
 
     public setNMIhandler(callback: CallableFunction) {
@@ -203,7 +206,7 @@ export class PPU {
             case reg.PPUDATA:
                 return 0; // Not implemented yet
             default:
-                throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
+                //throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
                 break;
         }
     }
@@ -287,7 +290,7 @@ export class PPU {
                 break;
 
             default:
-                throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
+                //throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
                 break;
         }
     }
@@ -304,12 +307,16 @@ export class PPU {
         }
     }
 
-    private drawPixel(x: number, y: number, color: Array<number>) {
-        let index = (y * this.ctx.canvas.width + x) * 4;
-        this.frameBuffer.data[index] = color[0] // red
-        this.frameBuffer.data[index + 1] = color[1] // green
-        this.frameBuffer.data[index + 2] = color[2] // blue
-        this.frameBuffer.data[index + 3] = 255 // alpha
+    private drawPixel(x: number, y: number, color: Array<number>, scaleX : number = 1, scaleY : number = 1) {
+        for (let dx = 0; dx < scaleX; dx++) {
+            for (let dy = 0; dy < scaleY; dy++) {
+                let index = ((y * scaleY + dy) * this.ctx.canvas.width + (x * scaleX + dx)) * 4;
+                this.frameBuffer.data[index] = color[0]; // red
+                this.frameBuffer.data[index + 1] = color[1]; // green
+                this.frameBuffer.data[index + 2] = color[2]; // blue
+                this.frameBuffer.data[index + 3] = 255; // alpha
+            }
+        }
     }
 
     private drawTile(tile: number, xPos: number, yPos: number, paletteIndex: number, flipH: boolean, flipV: boolean, priority: boolean, palettes: RAM, patternTable: RAM, backgroundTransparent: boolean) {
@@ -319,8 +326,8 @@ export class PPU {
         let chr = patternTable.getMemory().slice(chrIndex, chrIndex + 8);
         let attr = patternTable.getMemory().slice(chrIndex + 8, chrIndex + 16);
 
-        //let palette = palettes.readRange(paletteIndex, paletteIndex + 4);
-        let palette = this.testPalette;
+        let palette = palettes.readRange(paletteIndex, paletteIndex + 4);
+        //let palette = this.testPalette;
 
         for (let r = 0; r < chr.length; r++) {
             let chrRow = chr[r];
@@ -336,7 +343,7 @@ export class PPU {
                 let colorId = palette[colorIndex];
                 let color = colorMap[colorId];
                 // TRANSPARENCY
-                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color) //this.ctx.fillRect(x + b, y, 1, 1);
+                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color, this.outputScaleX, this.outputScaleY) //this.ctx.fillRect(x + b, y, 1, 1);
             }
 
         }
