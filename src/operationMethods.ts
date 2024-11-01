@@ -80,22 +80,30 @@ export function dec(cpu: CPU, arg: number) : void {
 }
 
 export function inx(cpu: CPU, arg: number) : void {
-    cpu.setXreg(cpu.getXreg() + 1);
+    let val = cpu.getXreg() + 1;
+    cpu.setFlags(val & 0xFF);
+    cpu.setXreg(val);
     //console.log(`Incremented X`);
 }
 
 export function dex(cpu: CPU, arg: number) : void {
-    cpu.setXreg(cpu.getXreg() - 1);
+    let val = cpu.getXreg() - 1;
+    cpu.setFlags(val & 0xFF);
+    cpu.setXreg(val);
     //console.log(`Decremented X`);
 }
 
 export function iny(cpu: CPU, arg: number) : void {
-    cpu.setYreg(cpu.getYreg() + 1);
+    let val = cpu.getYreg() + 1;
+    cpu.setFlags(val & 0xFF);
+    cpu.setYreg(val);
     //console.log(`Incremented Y`);
 }
 
 export function dey(cpu: CPU, arg: number) : void {
-    cpu.setYreg(cpu.getYreg() - 1);
+    let val = cpu.getYreg() + 1;
+    cpu.setFlags(val & 0xFF);
+    cpu.setYreg(val);
     //console.log(`Decremented Y`);
 }
 
@@ -117,10 +125,8 @@ export function jsr(cpu: CPU, arg: number) : void {
 export function rts(cpu: CPU, arg: number) : void {
     let lo = cpu.pullFromStack();
     let hi = cpu.pullFromStack();
-    let statusReg = cpu.pullFromStack();
     let returnAddr = Util.bytesToAddr(lo, hi);
 
-    cpu.setStatusReg(statusReg);
     cpu.setPC(returnAddr);
     console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
 }
@@ -238,4 +244,24 @@ export function ora(cpu: CPU, arg: number) : void {
 export function eor(cpu: CPU, arg: number) : void {
     cpu.setAreg(cpu.getAreg() ^ arg);
     //console.log(`EOR ${arg} with A`);
+}
+
+export function pha(cpu: CPU, arg: number) : void {
+    cpu.pushToStack(cpu.getAreg());
+    //console.log(`Pushed A to stack`);
+}
+
+export function pla(cpu: CPU, arg: number) : void {
+    cpu.setAreg(cpu.pullFromStack());
+    //console.log(`Pulled A from stack`);
+}
+
+export function php(cpu: CPU, arg: number) : void {
+    cpu.pushToStack(cpu.getStatusReg());
+    //console.log(`Pushed Status Reg to stack`);
+}
+
+export function plp(cpu: CPU, arg: number) : void {
+    cpu.setStatusReg(cpu.pullFromStack());
+    //console.log(`Pulled Status Reg from stack`);
 }

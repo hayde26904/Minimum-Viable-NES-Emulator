@@ -80,7 +80,7 @@ export const ops: Array<Operation> = [
 
     {
         name: "sty",
-        method: opMethods.ldy,
+        method: opMethods.sty,
         opCodes: [0x84, 0x94, 0x8C],
         addrModes: [addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE],
         argTypes: [argTypes.value, argTypes.value, argTypes.value],
@@ -383,6 +383,42 @@ export const ops: Array<Operation> = [
         addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
         argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
         cycles: [2,3,4,4,4,4,6,5]
+    },
+
+    {
+        name: "pha",
+        method: opMethods.pha,
+        opCodes: [0x48],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null],
+        cycles: [3]
+    },
+
+    {
+        name: "pla",
+        method: opMethods.pla,
+        opCodes: [0x68],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null],
+        cycles: [4]
+    },
+
+    {
+        name: "php",
+        method: opMethods.php,
+        opCodes: [0x08],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null],
+        cycles: [3]
+    },
+
+    {
+        name: "plp",
+        method: opMethods.plp,
+        opCodes: [0x28],
+        addrModes: [addrModes.IMPLICIT],
+        argTypes: [null],
+        cycles: [4]
     },
 
 

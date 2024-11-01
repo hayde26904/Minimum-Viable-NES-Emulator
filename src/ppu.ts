@@ -5,10 +5,6 @@ import { Util } from "./util";
 import { CPU } from "./cpu";
 import { Bus } from "./bus";
 
-const patternTablesAddrRange = [0x0000, 0x1FFF];
-const backgroundPalettesAddrRange = [0x3F00, 0x3F0F];
-const spritePalettesAddrRange = [0x3F10, 0x3F1F];
-
 /*const colorMap = [
     "#7C7C7C", "#0000FC", "#0000BC", "#4428BC", "#940084", "#A80020", "#A81000", "#881400",
     "#503000", "#007800", "#006800", "#005800", "#004058", "#000000", "#000000", "#000000",
@@ -119,7 +115,7 @@ export class PPU {
         for (let i = 0; i < patternTable0.getSize(); i++) {
             //both pattern tables are the same size, and they never won't be the same size, so it ok
             patternTable0.write(rom.read(i), i)
-            patternTable1.write(rom.read(i), i + patternTable0.getSize());
+            patternTable1.write(rom.read(i + patternTable0.getSize()), i);
         }
 
     }
@@ -134,12 +130,16 @@ export class PPU {
     }
 
     private writeToMem(value: number, address: number) {
-        console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
-        let memoryMapArray = Array.from(this.memoryMap);
-        let index = memoryMapArray.findIndex(([range, ram]) => address >= range[0] && address <= range[1]); //finds the correct ram object from a given memory address
-        let startAddress = memoryMapArray[index][0][0] // gets the starting address of the section of memory
-        let ramObject = memoryMapArray[index][1]
-        ramObject.write(value, address - startAddress); // converts the address to an index to index the ram object
+        //console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
+        try {
+            let memoryMapArray = Array.from(this.memoryMap);
+            let index = memoryMapArray.findIndex(([range, ram]) => (address % 0x3F20) >= range[0] && (address % 0x3F20) <= range[1]); //finds the correct ram object from a given memory address
+            let startAddress = memoryMapArray[index][0][0] // gets the starting address of the section of memory
+            let ramObject = memoryMapArray[index][1]
+            ramObject.write(value, address - startAddress); // converts the address to an index to index the ram object
+        } catch (err) {
+            console.log(err.message);
+        }
 
     }
 
@@ -154,8 +154,20 @@ export class PPU {
     }
 
     public readRegister(address: number) {
-
         switch (address) {
+            case reg.PPUCTRL:
+
+                return Util.boolsToBitmask([
+                    this.NMIenabled,
+                    this.masterSlave,
+                    this.spriteSizeMode,
+                    this.backgroundAddr,
+                    this.spriteAddr,
+                    this.vramIncrement,
+                    Boolean(Util.getBit(this.currentNametable, 1)),
+                    Boolean(Util.getBit(this.currentNametable, 0))
+                ]);
+
             case reg.PPUSTATUS:
 
                 this.writeCounter = 0; // reset latch
@@ -169,6 +181,19 @@ export class PPU {
                     false,
                     false,
                     false
+                ]);
+
+            case reg.PPUMASK:
+
+                return Util.boolsToBitmask([
+                    this.emphasizeBlue,
+                    this.emphasizeGreen,
+                    this.emphasizeRed,
+                    this.showSprites,
+                    this.showBackground,
+                    this.showLeftSprites,
+                    this.showLeftBackground,
+                    this.greyscale
                 ]);
 
             case reg.OAMADDR:
@@ -187,7 +212,7 @@ export class PPU {
 
     public writeRegister(value: number, address: number) {
 
-        console.log(`attempting to write ${Util.hex(value)} to PPU reg ${Util.hex(address)}`);
+        //console.log(`attempting to write ${Util.hex(value)} to PPU reg ${Util.hex(address)}`);
 
         switch (address) {
             case reg.PPUCTRL:

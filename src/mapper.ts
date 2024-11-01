@@ -10,6 +10,10 @@ export abstract class Mapper {
         this.rom = rom;
     }
 
+    public getPrgRom() : ROM {
+        return this.rom;
+    }
+
     public abstract read(address : number) : number;
     public abstract write(value : number, address : number) : void;
 

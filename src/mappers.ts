@@ -8,7 +8,7 @@ export class NROM extends Mapper {
     }
 
     public override read(address: number): number {
-        return this.rom.read(address -  0x8000);
+        return this.rom.read((address - 0x8000) % this.getPrgRom().getSize());
     }
     public override write(value: number, address: number): void {
         

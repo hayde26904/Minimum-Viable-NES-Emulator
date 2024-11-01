@@ -14,7 +14,7 @@ export class Util {
     }
 
     public static hex(value : number) : string {
-        if(value === null){
+        if(typeof value === 'undefined' || value === null){
             return "none";
         } else {
             return value.toString(16).toUpperCase().padStart(2, '0');
