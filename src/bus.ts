@@ -27,7 +27,11 @@ export class Bus {
 
         } else if(address < 0x4000){
 
-            return this.ppu.readRegister(0x2000 + (address % 8));
+            try {
+                return this.ppu.readRegister(0x2000 + (address % 8));
+            } catch(err){
+                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+            }
 
         } else if(address >= 0x8000){ 
 

@@ -53,31 +53,27 @@ export function relative(bus : Bus, cpu : CPU, args : Uint8Array, argType : numb
 
 export function indirect(bus : Bus, cpu : CPU, args : Uint8Array, argType : number) : number {
 
-    let fromZP = (typeof args[1] === "undefined");
-
-    let lo = bus.read(args[0]);
-    let hi = bus.read(fromZP ? args[0] + 1 : args[1]);
-
+    let addr = Util.bytesToAddr(args[0], args[1]);
+    let lo = bus.read(addr);
+    let hi = bus.read(addr + 1);
     return Util.bytesToAddr(lo, hi);
+
 }
 
 export function indirectX(bus : Bus, cpu : CPU, args : Uint8Array, argType : number) : number {
 
-    let fromZP = (typeof args[1] === "undefined");
-    let xReg = cpu.getXreg();
-
-    let lo = bus.read(args[0] + xReg);
-    let hi = bus.read((fromZP ? args[0] + 1 : args[1]) + xReg);
-
+    let addr = Util.bytesToAddr(args[0], args[1]) + cpu.getXreg();
+    let lo = bus.read(addr);
+    let hi = bus.read(addr + 1);
     return Util.bytesToAddr(lo, hi);
+
 }
 
 export function indirectY(bus : Bus, cpu : CPU, args : Uint8Array, argType : number) : number {
 
-    let fromZP = (typeof args[1] === "undefined");
-
-    let lo = bus.read(args[0]);
-    let hi = bus.read(fromZP ? args[0] + 1 : args[1]);
-
+    let addr = Util.bytesToAddr(args[0], args[1]);
+    let lo = bus.read(addr);
+    let hi = bus.read(addr + 1);
     return Util.bytesToAddr(lo, hi) + cpu.getYreg();
+
 }

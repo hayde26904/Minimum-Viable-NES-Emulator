@@ -177,10 +177,11 @@ export class CPU {
 
             let oldPC = this.PC;
             this.PC += opSize;
+
             opMethod(this, evaluatedArg);
 
             // DO NOT ENABLE THIS AT FULL SPEED EMULATION IT WILL MAKE THE BROWSER HANG
-            //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(evaluatedArg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
+            //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
 
@@ -227,10 +228,12 @@ export class CPU {
 
     public setXreg(value: number): void {
         this.Xreg = value & 0xFF;
+        this.setFlags(this.Xreg);
     }
 
     public setYreg(value: number): void {
         this.Yreg = value & 0xFF;
+        this.setFlags(this.Yreg);
     }
 
     public getAreg(): number {
@@ -260,13 +263,13 @@ export class CPU {
     public pushToStack(value : number): void{
         this.SP--;
         this.stack.write(value, this.getSP());
-        console.log(`Pushed ${Util.hex(value)} SP: ${Util.hex(this.SP)}`);
+        //console.log(`Pushed ${Util.hex(value)} SP: ${Util.hex(this.SP)}`);
     }
 
     public pullFromStack() : number {
         let value = this.stack.read(this.getSP());
         this.SP++;
-        console.log(`Pulled SP: ${Util.hex(value)}  new SP: ${Util.hex(this.SP)}`);
+        //console.log(`Pulled SP: ${Util.hex(value)}  new SP: ${Util.hex(this.SP)}`);
         return value;
     }
 

@@ -81,28 +81,24 @@ export function dec(cpu: CPU, arg: number) : void {
 
 export function inx(cpu: CPU, arg: number) : void {
     let val = cpu.getXreg() + 1;
-    cpu.setFlags(val & 0xFF);
     cpu.setXreg(val);
     //console.log(`Incremented X`);
 }
 
 export function dex(cpu: CPU, arg: number) : void {
     let val = cpu.getXreg() - 1;
-    cpu.setFlags(val & 0xFF);
     cpu.setXreg(val);
     //console.log(`Decremented X`);
 }
 
 export function iny(cpu: CPU, arg: number) : void {
     let val = cpu.getYreg() + 1;
-    cpu.setFlags(val & 0xFF);
     cpu.setYreg(val);
     //console.log(`Incremented Y`);
 }
 
 export function dey(cpu: CPU, arg: number) : void {
-    let val = cpu.getYreg() + 1;
-    cpu.setFlags(val & 0xFF);
+    let val = cpu.getYreg() - 1;
     cpu.setYreg(val);
     //console.log(`Decremented Y`);
 }
@@ -128,7 +124,7 @@ export function rts(cpu: CPU, arg: number) : void {
     let returnAddr = Util.bytesToAddr(lo, hi);
 
     cpu.setPC(returnAddr);
-    console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
+    //console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
 }
 
 export function rti(cpu: CPU, arg: number) : void {

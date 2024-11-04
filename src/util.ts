@@ -1,6 +1,8 @@
 export class Util {
     public static bytesToAddr(lobyte : number, hibyte : number): number {
-        return (hibyte << 8) | lobyte;
+        let lo = lobyte & 0xFF;
+        let hi = hibyte & 0xFF;
+        return (hi << 8) | lo;
     }
 
     public static addrToBytes(addr : number): Uint8Array {

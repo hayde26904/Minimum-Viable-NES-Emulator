@@ -29,8 +29,8 @@ const colorMap = [
 
 export class PPU {
 
-    public outputScaleX : number = 4;
-    public outputScaleY : number = 4;
+    public outputScaleX: number = 4;
+    public outputScaleY: number = 4;
 
     private ctx: CanvasRenderingContext2D;
     private frameBuffer: ImageData;
@@ -88,8 +88,8 @@ export class PPU {
     private spriteOverflow: boolean = false;
 
 
-    private testPalette : number[] = [
-        0x12,0x16,0x27,0x18
+    private testPalette: number[] = [
+        0x12, 0x16, 0x27, 0x18
     ];
 
     constructor(ctx: CanvasRenderingContext2D) {
@@ -134,15 +134,11 @@ export class PPU {
 
     private writeToMem(value: number, address: number) {
         //console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
-        try {
-            let memoryMapArray = Array.from(this.memoryMap);
-            let index = memoryMapArray.findIndex(([range, ram]) => (address % 0x3F20) >= range[0] && (address % 0x3F20) <= range[1]); //finds the correct ram object from a given memory address
-            let startAddress = memoryMapArray[index][0][0] // gets the starting address of the section of memory
-            let ramObject = memoryMapArray[index][1]
-            ramObject.write(value, address - startAddress); // converts the address to an index to index the ram object
-        } catch (err) {
-            console.log(err.message);
-        }
+        let memoryMapArray = Array.from(this.memoryMap);
+        let index = memoryMapArray.findIndex(([range, ram]) => (address % 0x3F20) >= range[0] && (address % 0x3F20) <= range[1]); //finds the correct ram object from a given memory address
+        let startAddress = memoryMapArray[index][0][0] // gets the starting address of the section of memory
+        let ramObject = memoryMapArray[index][1]
+        ramObject.write(value, address - startAddress); // converts the address to an index to index the ram object
 
     }
 
@@ -206,7 +202,7 @@ export class PPU {
             case reg.PPUDATA:
                 return 0; // Not implemented yet
             default:
-                //throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
+                throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
                 break;
         }
     }
@@ -290,7 +286,7 @@ export class PPU {
                 break;
 
             default:
-                //throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
+                throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
                 break;
         }
     }
@@ -307,7 +303,7 @@ export class PPU {
         }
     }
 
-    private drawPixel(x: number, y: number, color: Array<number>, scaleX : number = 1, scaleY : number = 1) {
+    private drawPixel(x: number, y: number, color: Array<number>, scaleX: number = 1, scaleY: number = 1) {
         for (let dx = 0; dx < scaleX; dx++) {
             for (let dy = 0; dy < scaleY; dy++) {
                 let index = ((y * scaleY + dy) * this.ctx.canvas.width + (x * scaleX + dx)) * 4;
