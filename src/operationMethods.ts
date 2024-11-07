@@ -151,34 +151,69 @@ export function clc(cpu: CPU, arg: number) : void {
 
 export function adc(cpu: CPU, arg: number) : void {
     let c = Number(cpu.getFlags().C);
-    cpu.setAreg(cpu.getAreg() + arg + c);
-    cpu.clearCarry();
+    let result = cpu.getAreg() + arg + c;
+    cpu.setAreg(result);
+
+    if(result > 0xFF){
+        cpu.setCarry();
+    } else {
+        cpu.clearCarry();
+    }
+
     //console.log(`Added ${arg} to A`);
 }
 
 export function sbc(cpu: CPU, arg: number) : void {
     let c = Number(!cpu.getFlags().C);
-    cpu.setAreg(cpu.getAreg() - arg - c);
-    cpu.setCarry();
+    let result = cpu.getAreg() - arg - c;
+    cpu.setAreg(result);
+    
+    if(result < 0){
+        cpu.clearCarry();
+    } else {
+        cpu.setCarry();
+    }
     //console.log(`Subtracted ${arg} from A`);
 }
 
 export function cmp(cpu: CPU, arg: number) : void {
-    cpu.setFlags(cpu.getAreg() - arg);
+    let result = cpu.getAreg() - arg;
+    cpu.setFlags(result);
+
+    if(result < 0){
+        cpu.clearCarry();
+    } else {
+        cpu.setCarry();
+    }
     //console.log(`Compared A (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
 }
 
 export function cpx(cpu: CPU, arg: number) : void {
-    cpu.setFlags(cpu.getXreg() - arg);
+    let result = cpu.getXreg() - arg;
+    cpu.setFlags(result);
+
+    if(result < 0){
+        cpu.clearCarry();
+    } else {
+        cpu.setCarry();
+    }
     //console.log(`Compared X (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
 }
 
 export function cpy(cpu: CPU, arg: number) : void {
-    cpu.setFlags(cpu.getYreg() - arg);
+    let result = cpu.getYreg() - arg;
+    cpu.setFlags(result);
+
+    if(result < 0){
+        cpu.clearCarry();
+    } else {
+        cpu.setCarry();
+    }
     ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
 }
 
 export function bit(cpu: CPU, arg: number) : void {
+    
     cpu.setFlags(arg);
     if((arg & 0x80) === 0x80) cpu.setNegative(); else cpu.clearNegative();
     if((arg & 0x40) === 0x40) cpu.setOverflow(); else cpu.clearOverflow();

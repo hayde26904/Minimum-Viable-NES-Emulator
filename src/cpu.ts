@@ -315,12 +315,6 @@ export class CPU {
 
     public setFlags(value: number): void {
 
-        if(value > 0xFF){
-            this.Cflag = true;
-        } else if(value < 0x00){
-            this.Cflag = false;
-        }
-
         this.Zflag = (value === 0);
         this.Nflag = (value & 0x80) === 0x80;
 
