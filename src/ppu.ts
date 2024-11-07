@@ -383,6 +383,13 @@ export class PPU {
         this.ctx.putImageData(this.frameBuffer, 0, 0);
         this.frameBuffer = this.ctx.createImageData(this.ctx.canvas.width, this.ctx.canvas.height);
 
+        for(let c=0; c < this.backgroundPalettes.getSize();c++){
+            let colorRGB = colorMap[this.backgroundPalettes.read(c)];
+            let color = '#'+ Util.hex(colorRGB[0]) + Util.hex(colorRGB[1]) + Util.hex(colorRGB[2]);
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(c * 16, 0, 16, 16);
+        }
+
     }
 
 }
