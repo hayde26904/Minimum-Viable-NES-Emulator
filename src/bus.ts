@@ -52,7 +52,7 @@ export class Bus {
             try {
                 this.ppu.writeRegister(value, 0x2000 + (address % 8));
             } catch(err){
-                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+                //throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
             }
 
         } else if(address === 0x4014){ //OAM DMA

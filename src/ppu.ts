@@ -202,7 +202,8 @@ export class PPU {
             case reg.PPUDATA:
                 return 0; // Not implemented yet
             default:
-                throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
+                //throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
+                return 0;
                 break;
         }
     }
@@ -286,7 +287,7 @@ export class PPU {
                 break;
 
             default:
-                throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
+                //throw new Error(`Attempted write to invalid PPU register address: ${Util.hex(address)}`);
                 break;
         }
     }
