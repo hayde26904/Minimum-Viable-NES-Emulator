@@ -97,19 +97,19 @@ function loop() {
   let cyclesExecuted = 0;
 
 
-  console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
   while (cyclesExecuted < cyclesToExecuteFrame) {
     const cycles = cpu.executeNextOperation();
     cyclesExecuted += cycles;
     ppu.tick();
   }
 
-  console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
 
   cyclesExecuted = 0;
 
   ppu.NMI();
-  console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
 
   while (cyclesExecuted < cyclesToExecuteNMI) {
     const cycles = cpu.executeNextOperation();
@@ -117,7 +117,7 @@ function loop() {
     ppu.tick();
 
   }
-  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
 
   //cpu.executeNextOperation();
   //ppu.tick();
