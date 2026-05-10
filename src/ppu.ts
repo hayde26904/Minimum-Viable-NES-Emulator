@@ -87,6 +87,11 @@ export class PPU {
     private spriteZeroHit: boolean = false;
     private spriteOverflow: boolean = false;
 
+    private paletteBuffer = new Uint8Array(4);
+
+    private cycle: number = 0;
+    private scanline: number = 0;
+
 
     private testPalette: number[] = [
         0x12, 0x16, 0x27, 0x18
@@ -143,13 +148,29 @@ export class PPU {
     }
 
     public tick() {
+        this.cycle++;
+
+        if (this.cycle > 340) {
+
+            this.cycle = 0;
+            this.scanline++;
+
+            if (this.scanline === 240) { // VBLANK START
+                this.draw(); // not accurate but works for now 
+                this.NMI();
+            }
+
+            if (this.scanline > 261) { // VBLANK END
+                this.spriteZeroHit = false;
+                this.scanline = 0;
+            }
+        }
 
     }
 
     public NMI() {
-        if (this.NMIenabled) {
-            this.NMIhandler();
-        }
+        if (!this.NMIenabled) return;
+        this.NMIhandler();
     }
 
     public readRegister(address: number) {
@@ -303,31 +324,33 @@ export class PPU {
         }
     }
 
-    private drawPixel(x: number, y: number, color: Array<number>, scaleX: number = 1, scaleY: number = 1) {
+    private drawPixel(x: number, y: number, r: number, g: number, b: number, scaleX: number = 1, scaleY: number = 1) {
         for (let dx = 0; dx < scaleX; dx++) {
             for (let dy = 0; dy < scaleY; dy++) {
                 let index = ((y * scaleY + dy) * this.ctx.canvas.width + (x * scaleX + dx)) * 4;
-                this.frameBuffer.data[index] = color[0]; // red
-                this.frameBuffer.data[index + 1] = color[1]; // green
-                this.frameBuffer.data[index + 2] = color[2]; // blue
+                this.frameBuffer.data[index] = r; // red
+                this.frameBuffer.data[index + 1] = g; // green
+                this.frameBuffer.data[index + 2] = b; // blue
                 this.frameBuffer.data[index + 3] = 255; // alpha
             }
         }
     }
 
     private drawTile(tile: number, xPos: number, yPos: number, paletteIndex: number, flipH: boolean, flipV: boolean, priority: boolean, palettes: RAM, patternTable: RAM, backgroundTransparent: boolean) {
-
         //pattern tables start at address 0 in PPU memory
         let chrIndex = tile * 16;
-        let chr = patternTable.getMemory().slice(chrIndex, chrIndex + 8);
-        let attr = patternTable.getMemory().slice(chrIndex + 8, chrIndex + 16);
+        //let chr = patternTable.getMemory().slice(chrIndex, chrIndex + 8);
+        //let attr = patternTable.getMemory().slice(chrIndex + 8, chrIndex + 16);
 
-        let palette = palettes.readRange(paletteIndex, paletteIndex + 4);
-        //let palette = this.testPalette;
 
-        for (let r = 0; r < chr.length; r++) {
-            let chrRow = chr[r];
-            let attrRow = attr[r];
+        this.paletteBuffer[0] = palettes.read(paletteIndex);
+        this.paletteBuffer[1] = palettes.read(paletteIndex + 1);
+        this.paletteBuffer[2] = palettes.read(paletteIndex + 2);
+        this.paletteBuffer[3] = palettes.read(paletteIndex + 3);
+
+        for (let r = 0; r < 8; r++) {
+            let chrRow = patternTable.read(chrIndex + r);
+            let attrRow = patternTable.read(chrIndex + r + 8);
             let x = xPos;
             let y = yPos + r;
 
@@ -336,10 +359,10 @@ export class PPU {
                 let attrBit = (attrRow >> (7 - b)) & 1;
 
                 let colorIndex = this.getColorIndex(chrBit, attrBit);
-                let colorId = palette[colorIndex];
+                let colorId = this.paletteBuffer[colorIndex];
                 let color = colorMap[colorId];
                 // TRANSPARENCY
-                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color, this.outputScaleX, this.outputScaleY) //this.ctx.fillRect(x + b, y, 1, 1);
+                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color[0], color[1], color[2], this.outputScaleX, this.outputScaleY) //this.ctx.fillRect(x + b, y, 1, 1);
             }
 
         }
@@ -348,26 +371,28 @@ export class PPU {
     private drawSprites() {
         for (let spriteIndex = 0; (spriteIndex + 4) < this.oam.getSize(); spriteIndex += 4) {
 
-            let tileIndex = this.oam.read(spriteIndex + 1);
-            let xPos = this.oam.read(spriteIndex + 3);
-            let yPos = this.oam.read(spriteIndex);
-            let attributes = this.oam.read(spriteIndex + 2);
+            const tileIndex = this.oam.read(spriteIndex + 1);
+            const xPos = this.oam.read(spriteIndex + 3);
+            const yPos = this.oam.read(spriteIndex);
+            const attributes = this.oam.read(spriteIndex + 2);
 
-            let paletteIndex = attributes & 3;
+            const paletteIndex = attributes & 3;
 
-            if (tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
+            if (spriteIndex === 0) this.spriteZeroHit = true; // set sprite zero hit flag if the first sprite in OAM is being drawn, used for some games to do things like split the screen
+
+            //if (tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
             this.drawTile(tileIndex, xPos, yPos, paletteIndex, false, false, false, this.spritePalettes, this.patternTables[0], true);
         }
     }
 
     private drawBackground() {
-
+        
         let nametable = this.nameTables[this.currentNametable];
 
         for (let i = 0; i < nametable.getSize(); i++) {
-            let tileIndex = nametable.read(i);
-            let xPos = (i % 32) * 8;
-            let yPos = Math.floor(i / 32) * 8;
+            const tileIndex = nametable.read(i);
+            const xPos = (i % 32) * 8;
+            const yPos = Math.floor(i / 32) * 8;
 
             this.drawTile(tileIndex, xPos, yPos, 0, false, false, false, this.backgroundPalettes, this.patternTables[1], false);
         }
@@ -381,7 +406,7 @@ export class PPU {
         this.drawSprites();
 
         this.ctx.putImageData(this.frameBuffer, 0, 0);
-        this.frameBuffer = this.ctx.createImageData(this.ctx.canvas.width, this.ctx.canvas.height);
+        this.frameBuffer.data.fill(0);
 
     }
 

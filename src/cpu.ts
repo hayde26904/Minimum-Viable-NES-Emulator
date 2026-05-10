@@ -88,6 +88,10 @@ export class CPU {
     private resetVector: number = 0;
     private IRQvector: number = 0;
 
+    private NMITriggered: boolean = false;
+
+    private opArgs = new Uint8Array(2); //reusable array for storing operation arguments, max size is 2 because the largest instruction is 3 bytes (1 for opcode and 2 for args)
+
     constructor() {
 
         this.stack = new RAM(0x100); // need an extra one because 0 indexing
@@ -138,33 +142,26 @@ export class CPU {
 
     }
 
-    //returns number of cycles
+    //returns number of cycles used
     public executeNextOperation(): number {
 
         let opcode = this.bus.read(this.PC);
-        //let operation = ops.find(op => op.opCodes.includes(opcode));
         let operation = opcodeMap.get(opcode);
 
         if(operation){
             
-            let opName = operation.name;
             let opMethod = operation.method;
-            /*let opcodeIndex = operation.opCodes.indexOf(opcode);
-            let opAddrMode = operation.addrModes[opcodeIndex];
-            let opArgType = operation.argTypes[opcodeIndex];
-            let opCycles = operation.cycles[opcodeIndex];*/
             let opAddrMode = operation.addrMode;
             let opArgType = operation.argType;
             let opCycles = operation.cycles;
             let opSize = addrModeSizeMap.get(opAddrMode);
             let numArgs = opSize - 1;
-            let args = new Uint8Array(numArgs);
 
-            for(let i = 0; i < args.length; i++){
-                args[i] = this.bus.read(this.PC + i + 1);
+            for(let i = 0; i < numArgs; i++){
+                this.opArgs[i] = this.bus.read(this.PC + i + 1);
             }
 
-            let arg = addrModeHandlerMap.get(opAddrMode)(this.bus, this, args, opArgType);
+            let arg = addrModeHandlerMap.get(opAddrMode)(this.bus, this, this.opArgs, opArgType);
             let evaluatedArg;
             switch (opArgType) {
                 case argTypes.value:
@@ -179,9 +176,6 @@ export class CPU {
             this.PC += opSize;
 
             opMethod(this, evaluatedArg);
-
-            // DO NOT ENABLE THIS AT FULL SPEED EMULATION IT WILL MAKE THE BROWSER HANG
-            //console.log(`${Util.hex(oldPC)}: ${opName.toUpperCase()} ${Util.hex(arg)}`, `A: ${Util.hex(this.Areg)} X: ${Util.hex(this.Xreg)} Y: ${Util.hex(this.Yreg)}`);
 
             return opCycles;
 
@@ -198,6 +192,7 @@ export class CPU {
         this.pushToStack(this.getStatusReg());
         this.pushToStack(hi);
         this.pushToStack(lo);
+        this.NMITriggered = true;
         this.setPC(this.NMIvector);
     }
 
@@ -330,6 +325,14 @@ export class CPU {
             D: this.Dflag,
             B: this.Bflag
         }
+    }
+
+    public isInNMI() : boolean {
+        return this.NMITriggered;
+    }
+
+    public endNMI() : void {
+        this.NMITriggered = false;
     }
 
 }

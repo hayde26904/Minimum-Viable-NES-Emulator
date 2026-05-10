@@ -136,7 +136,8 @@ export function rti(cpu: CPU, arg: number) : void {
 
     cpu.setStatusReg(statusReg);
     cpu.setPC(returnAddr);
-    console.log(`Returned from interrupt to ${Util.hex(returnAddr)}`);
+    cpu.endNMI();
+    //console.log(`Returned from interrupt to ${Util.hex(returnAddr)}`);
 }
 
 export function sec(cpu: CPU, arg: number) : void {

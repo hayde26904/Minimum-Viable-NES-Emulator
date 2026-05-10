@@ -11,8 +11,10 @@ import { mapperMap } from './mapperMap';
 const TARGET_FPS = 60
 
 const CYCLES_PER_SECOND = 1789773;
-const CYCLES_PER_FRAME = 27120;
-const CYCLES_PER_NMI = 2486;
+const CYCLES_PER_FRAME = 29780;
+const NMI_CYCLE = 27507
+
+const NES_FRAME_TIME = 1000 / 60.098; // ~16.64ms per frame
 
 let canvas = document.getElementById('canvas') as HTMLCanvasElement;
 let ctx = canvas.getContext('2d');
@@ -89,39 +91,35 @@ let lastFrameTime = performance.now();
 function loop() {
 
   const currentTime = performance.now();
-  const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);
+  //const deltaTime = (currentTime - lastFrameTime) / (1000 / TARGET_FPS);
+  const elapsedTime = currentTime - lastFrameTime;
+
+  if (elapsedTime < NES_FRAME_TIME) { // skip frame if we haven't reached the target frame time yet
+    requestAnimationFrame(loop);
+    return;
+  }
 
   //const cyclesToExecute = Math.floor((CYCLES_PER_SECOND / TARGET_FPS) * (deltaTime / 1000));
-  const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME * deltaTime);
-  const cyclesToExecuteNMI = Math.floor(CYCLES_PER_NMI * deltaTime);
+  const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME);
   let cyclesExecuted = 0;
 
 
-  console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
   while (cyclesExecuted < cyclesToExecuteFrame) {
     const cycles = cpu.executeNextOperation();
     cyclesExecuted += cycles;
-    ppu.tick();
+
+    for (let i = 0; i < cycles * 3; i++){
+      ppu.tick();
+    }
+    
   }
 
-  console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
 
   cyclesExecuted = 0;
-
-  ppu.NMI();
-  console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
-
-  while (cyclesExecuted < cyclesToExecuteNMI) {
-    const cycles = cpu.executeNextOperation();
-    cyclesExecuted += cycles;
-    ppu.tick();
-
-  }
-  console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
-
-  //cpu.executeNextOperation();
-  //ppu.tick();
-  ppu.draw();
+  //console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
+  //console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
 
   lastFrameTime = currentTime;
   requestAnimationFrame(loop);
