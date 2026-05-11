@@ -2,6 +2,7 @@ import { CPU } from "./cpu";
 import { Mapper } from "./mapper";
 import { PPU } from "./ppu";
 import { RAM } from "./ram";
+import * as reg from "./registers";
 import { Util } from "./util";
 
 export class Bus {
@@ -55,7 +56,7 @@ export class Bus {
                 //throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
             }
 
-        } else if(address === 0x4014){ //OAM DMA
+        } else if(address === reg.OAMDMA){ //OAM DMA
 
             this.ppu.writeRegister(value, address);
 

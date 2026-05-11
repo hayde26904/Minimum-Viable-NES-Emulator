@@ -109,7 +109,7 @@ export function jmp(cpu: CPU, arg: number) : void {
 }
 
 export function jsr(cpu: CPU, arg: number) : void {
-    let from = cpu.getPC();
+    let from = cpu.getPC() - 1;
     let [lo, hi] = Util.addrToBytes(from);
 
     cpu.pushToStack(hi);
@@ -121,7 +121,7 @@ export function jsr(cpu: CPU, arg: number) : void {
 export function rts(cpu: CPU, arg: number) : void {
     let lo = cpu.pullFromStack();
     let hi = cpu.pullFromStack();
-    let returnAddr = Util.bytesToAddr(lo, hi);
+    let returnAddr = Util.bytesToAddr(lo, hi) + 1;
 
     cpu.setPC(returnAddr);
     //console.log(`Returned from subroutine to ${Util.hex(returnAddr)}`);
@@ -152,28 +152,47 @@ export function clc(cpu: CPU, arg: number) : void {
 
 export function adc(cpu: CPU, arg: number) : void {
     let c = Number(cpu.getFlags().C);
-    let result = cpu.getAreg() + arg + c;
-    cpu.setAreg(result);
-
+    let a = cpu.getAreg();
+    let result = a + arg + c;
+    
+    // Set carry if result overflows 8-bit
     if(result > 0xFF){
         cpu.setCarry();
     } else {
         cpu.clearCarry();
     }
-
+    
+    // Set overflow if signed overflow occurred
+    if(((a & 0x80) === (arg & 0x80)) && ((a & 0x80) !== (result & 0x80))){
+        cpu.setOverflow();
+    } else {
+        cpu.clearOverflow();
+    }
+    
+    cpu.setAreg(result);
     //console.log(`Added ${arg} to A`);
 }
 
 export function sbc(cpu: CPU, arg: number) : void {
     let c = Number(!cpu.getFlags().C);
-    let result = cpu.getAreg() - arg - c;
-    cpu.setAreg(result);
+    let a = cpu.getAreg();
+    let result = a - arg - c;
     
-    if(result < 0){
-        cpu.clearCarry();
-    } else {
+    // Set carry if no borrow occurred (result >= 0)
+    if(result >= 0){
         cpu.setCarry();
+    } else {
+        cpu.clearCarry();
     }
+    
+    // Set overflow if signed overflow occurred
+    if(((a & 0x80) !== (arg & 0x80)) && ((a & 0x80) !== (result & 0x80))){
+        cpu.setOverflow();
+    } else {
+        cpu.clearOverflow();
+    }
+    
+    cpu.setAreg(result);
     //console.log(`Subtracted ${arg} from A`);
 }
 
@@ -210,15 +229,15 @@ export function cpy(cpu: CPU, arg: number) : void {
     } else {
         cpu.setCarry();
     }
-    ///console.log(`Compared Y (${Util.hex(cpu.getAreg())}) to ${Util.hex(arg)}`);
+    //console.log(`Compared Y (${Util.hex(cpu.getYreg())}) to ${Util.hex(arg)}`);
 }
 
 export function bit(cpu: CPU, arg: number) : void {
-    
-    cpu.setFlags(arg);
+    let result = cpu.getAreg() & arg;
+    cpu.setFlags(result);
     if((arg & 0x80) === 0x80) cpu.setNegative(); else cpu.clearNegative();
     if((arg & 0x40) === 0x40) cpu.setOverflow(); else cpu.clearOverflow();
-    ///console.log(`BIT with ${Util.hex(arg)}`);
+    //console.log(`BIT with ${Util.hex(arg)}`);
 }
 
 export function beq(cpu: CPU, arg: number) : void {

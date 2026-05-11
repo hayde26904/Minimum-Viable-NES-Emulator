@@ -37,7 +37,8 @@ export class PPU {
     private bus: Bus;
     private NMIhandler: CallableFunction;
     private patternTables: Array<RAM> = [new RAM(0x1000), new RAM(0x1000)];
-    private nameTables: Array<RAM> = [new RAM(0x400), new RAM(0x400), new RAM(0x400), new RAM(0x400)];
+    private nameTables: Array<RAM> = [new RAM(0x3C1), new RAM(0x3C1), new RAM(0x3C1), new RAM(0x3C1)];
+    private attrTables: Array<RAM> = [new RAM(0x100), new RAM(0x100), new RAM(0x100), new RAM(0x100)];
     private backgroundPalettes: RAM = new RAM(0x10);
     private spritePalettes: RAM = new RAM(0x10);
     private oam: RAM = new RAM(0xFF);
@@ -222,6 +223,8 @@ export class PPU {
                 return this.oam.read(this.oamAddr);
             case reg.PPUDATA:
                 return 0; // Not implemented yet
+            case reg.PPUSCROLL:
+                return 0; // Not readable
             default:
                 //throw new Error(`Attempted read from invalid PPU register address: ${Util.hex(address)}`);
                 return 0;
@@ -337,17 +340,9 @@ export class PPU {
         }
     }
 
-    private drawTile(tile: number, xPos: number, yPos: number, paletteIndex: number, flipH: boolean, flipV: boolean, priority: boolean, palettes: RAM, patternTable: RAM, backgroundTransparent: boolean) {
+    private drawTile(tile: number, xPos: number, yPos: number, palette: Uint8Array, flipH: boolean, flipV: boolean, priority: boolean, patternTable: RAM, backgroundTransparent: boolean) {
         //pattern tables start at address 0 in PPU memory
         let chrIndex = tile * 16;
-        //let chr = patternTable.getMemory().slice(chrIndex, chrIndex + 8);
-        //let attr = patternTable.getMemory().slice(chrIndex + 8, chrIndex + 16);
-
-
-        this.paletteBuffer[0] = palettes.read(paletteIndex);
-        this.paletteBuffer[1] = palettes.read(paletteIndex + 1);
-        this.paletteBuffer[2] = palettes.read(paletteIndex + 2);
-        this.paletteBuffer[3] = palettes.read(paletteIndex + 3);
 
         for (let r = 0; r < 8; r++) {
             let chrRow = patternTable.read(chrIndex + r);
@@ -360,7 +355,7 @@ export class PPU {
                 let attrBit = (attrRow >> (7 - b)) & 1;
 
                 let colorIndex = this.getColorIndex(chrBit, attrBit);
-                let colorId = this.paletteBuffer[colorIndex];
+                let colorId = palette[colorIndex];
                 let color = colorMap[colorId];
                 // TRANSPARENCY
                 if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color[0], color[1], color[2], this.outputScaleX, this.outputScaleY) //this.ctx.fillRect(x + b, y, 1, 1);
@@ -377,12 +372,18 @@ export class PPU {
             const yPos = this.oam.read(spriteIndex);
             const attributes = this.oam.read(spriteIndex + 2);
 
-            const paletteIndex = attributes & 3;
+            //const paletteIndex = attributes & 3;
+            //const palette = this.spritePalettes.readRange(paletteIndex, paletteIndex+3);
+            const palette = new Uint8Array(4);
+            palette[0] = 0x04;
+            palette[1] = 0x03;
+            palette[2] = 0x25;
+            palette[3] = 0x27;
 
             if (spriteIndex === 0) this.spriteZeroHit = true; // set sprite zero hit flag if the first sprite in OAM is being drawn, used for some games to do things like split the screen
 
             //if (tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
-            this.drawTile(tileIndex, xPos, yPos, paletteIndex, false, false, false, this.spritePalettes, this.patternTables[0], true);
+            this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[0], true);
         }
     }
 
@@ -394,8 +395,13 @@ export class PPU {
             const tileIndex = nametable.read(i);
             const xPos = (i % 32) * 8;
             const yPos = Math.floor(i / 32) * 8;
+            const palette = new Uint8Array(4);
+            palette[0] = 0x04;
+            palette[1] = 0x03;
+            palette[2] = 0x25;
+            palette[3] = 0x27;
 
-            this.drawTile(tileIndex, xPos, yPos, 0, false, false, false, this.backgroundPalettes, this.patternTables[1], false);
+            this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[1], false);
         }
     }
 

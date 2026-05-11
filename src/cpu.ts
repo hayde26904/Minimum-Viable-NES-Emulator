@@ -92,6 +92,8 @@ export class CPU {
 
     private opArgs = new Uint8Array(2); //reusable array for storing operation arguments, max size is 2 because the largest instruction is 3 bytes (1 for opcode and 2 for args)
 
+    private logs = new Array<string>();
+
     constructor() {
 
         this.stack = new RAM(0x100); // need an extra one because 0 indexing
@@ -181,6 +183,7 @@ export class CPU {
 
         } else {
             //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
+            //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
             return 1; //1 cycle I guess
         }
@@ -198,7 +201,7 @@ export class CPU {
 
     public setPC(addr: number): void {
         this.PC = addr;
-        //console.log("SET PC: ", Util.hex(this.PC));
+        //console.log(`SET PC: ${Util.hex(this.PC)}`);
     }
 
     public getPC(): number {
@@ -207,7 +210,7 @@ export class CPU {
 
     public setSP(value: number): void {
         this.SP = value & 0xFF;
-        //console.log("SET SP: ", Util.hex(this.SP));
+        //console.log(`SET SP: ${Util.hex(this.SP)}`);
     }
 
     public getSP(): number {
@@ -333,6 +336,18 @@ export class CPU {
 
     public endNMI() : void {
         this.NMITriggered = false;
+    }
+
+    public log(message: string) : void {
+        //console.logs.push(message);
+    }
+
+    public getLogs() : string[] {
+        return //console.logs;
+    }
+
+    public clearLogs() : void {
+        //console.logs.length = 0;
     }
 
 }
