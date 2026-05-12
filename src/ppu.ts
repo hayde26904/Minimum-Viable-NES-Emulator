@@ -37,8 +37,8 @@ export class PPU {
     private bus: Bus;
     private NMIhandler: CallableFunction;
     private patternTables: Array<RAM> = [new RAM(0x1000), new RAM(0x1000)];
-    private nameTables: Array<RAM> = [new RAM(0x3C1), new RAM(0x3C1), new RAM(0x3C1), new RAM(0x3C1)];
-    private attrTables: Array<RAM> = [new RAM(0x100), new RAM(0x100), new RAM(0x100), new RAM(0x100)];
+    private nameTables: Array<RAM> = [new RAM(0x3C0), new RAM(0x3C0), new RAM(0x3C0), new RAM(0x3C0)];
+    private attrTables: Array<RAM> = [new RAM(0x40), new RAM(0x40), new RAM(0x40), new RAM(0x40)];
     private backgroundPalettes: RAM = new RAM(0x10);
     private spritePalettes: RAM = new RAM(0x10);
     private oam: RAM = new RAM(0xFF);
@@ -47,10 +47,14 @@ export class PPU {
     private memoryMap: Map<Array<number>, RAM> = new Map([
         [[0x0000, 0x0FFF], this.patternTables[0]],
         [[0x1000, 0x1FFF], this.patternTables[1]],
-        [[0x2000, 0x23FF], this.nameTables[0]],
-        [[0x2400, 0x27FF], this.nameTables[1]],
-        [[0x2800, 0x2BFF], this.nameTables[2]],
-        [[0x2C00, 0x2FFF], this.nameTables[3]],
+        [[0x2000, 0x23BF], this.nameTables[0]],
+        [[0x23C0, 0x23C0+0x40], this.attrTables[0]],
+        [[0x2400, 0x27BF], this.nameTables[1]],
+        [[0x27C0, 0x27C0+0x40], this.attrTables[1]],
+        [[0x2800, 0x2BBF], this.nameTables[2]],
+        [[0x2BC0, 0x2BC0+0x40], this.attrTables[2]],
+        [[0x2C00, 0x2FBF], this.nameTables[3]],
+        [[0x2FC0, 0x2FC0+0x40], this.attrTables[3]],
         [[0x3F00, 0x3F0F], this.backgroundPalettes],
         [[0x3F10, 0x3F1F], this.spritePalettes]
     ]);
@@ -372,13 +376,13 @@ export class PPU {
             const yPos = this.oam.read(spriteIndex);
             const attributes = this.oam.read(spriteIndex + 2);
 
-            //const paletteIndex = attributes & 3;
-            //const palette = this.spritePalettes.readRange(paletteIndex, paletteIndex+3);
+            const paletteIndex = (attributes & 3) * 4; // each palette is 4 bytes long, so multiply the index by 4 to get the starting address of the palette in sprite palette memory
             const palette = new Uint8Array(4);
-            palette[0] = 0x04;
-            palette[1] = 0x03;
-            palette[2] = 0x25;
-            palette[3] = 0x27;
+            palette[0] = this.spritePalettes.read(paletteIndex);
+            palette[1] = this.spritePalettes.read(paletteIndex + 1);
+            palette[2] = this.spritePalettes.read(paletteIndex + 2);
+            palette[3] = this.spritePalettes.read(paletteIndex + 3);
+
 
             if (spriteIndex === 0) this.spriteZeroHit = true; // set sprite zero hit flag if the first sprite in OAM is being drawn, used for some games to do things like split the screen
 
@@ -395,11 +399,15 @@ export class PPU {
             const tileIndex = nametable.read(i);
             const xPos = (i % 32) * 8;
             const yPos = Math.floor(i / 32) * 8;
+            const attrX = Math.floor(i / 2) % 8;
+            const attrY = Math.floor(i / 128); // not sure, I just increased the number until it worked
+            const attrIndex = (attrY * 8) + attrX;
+            const paletteIndex = this.attrTables[this.currentNametable].read(attrIndex);
             const palette = new Uint8Array(4);
-            palette[0] = 0x04;
-            palette[1] = 0x03;
-            palette[2] = 0x25;
-            palette[3] = 0x27;
+            palette[0] = this.backgroundPalettes.read(paletteIndex);
+            palette[1] = this.backgroundPalettes.read(paletteIndex + 1);
+            palette[2] = this.backgroundPalettes.read(paletteIndex + 2);
+            palette[3] = this.backgroundPalettes.read(paletteIndex + 3);
 
             this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[1], false);
         }
