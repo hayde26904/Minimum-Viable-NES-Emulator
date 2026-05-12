@@ -27,9 +27,13 @@ const colorMap = [
     [248, 216, 120], [216, 248, 120], [184, 248, 184], [184, 248, 216], [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0]
 ];
 
-interface MemoryMapValue {
+type MemoryWriteHandler = (value: number, address: number) => void;
+
+interface MemoryRegion {
+    start: number;
+    end: number;
     ram: RAM;
-    callback?: CallableFunction;
+    onWrite?: MemoryWriteHandler;
 }
 
 export class PPU {
@@ -49,20 +53,22 @@ export class PPU {
     private oam: RAM = new RAM(0xFF);
 
     // maps different RAM to different addresses
-    private memoryMap: Map<Array<number>, MemoryMapValue> = new Map([
-        [[0x0000, 0x0FFF], {ram: this.patternTables[0]}],
-        [[0x1000, 0x1FFF], this.patternTables[1]],
-        [[0x2000, 0x23BF], this.nameTables[0]],
-        [[0x23C0, 0x23C0+0x40], this.attrTables[0]],
-        [[0x2400, 0x27BF], this.nameTables[1]],
-        [[0x27C0, 0x27C0+0x40], this.attrTables[1]],
-        [[0x2800, 0x2BBF], this.nameTables[2]],
-        [[0x2BC0, 0x2BC0+0x40], this.attrTables[2]],
-        [[0x2C00, 0x2FBF], this.nameTables[3]],
-        [[0x2FC0, 0x2FC0+0x40], this.attrTables[3]],
-        [[0x3F00, 0x3F0F], this.backgroundPalettes],
-        [[0x3F10, 0x3F1F], this.spritePalettes]
-    ]);
+    private memoryRegions: MemoryRegion[] = [
+        {start: 0x0000, end: 0x0FFF, ram: this.patternTables[0]},
+        {start: 0x1000, end: 0x1FFF, ram: this.patternTables[1]},
+        {start: 0x2000, end: 0x23BF, ram: this.nameTables[0]},
+        {start: 0x23C0, end: 0x23FF, ram: this.attrTables[0]},
+        {start: 0x2400, end: 0x27BF, ram: this.nameTables[1]},
+        {start: 0x27C0, end: 0x27FF, ram: this.attrTables[1]},
+        {start: 0x2800, end: 0x2BBF, ram: this.nameTables[2]},
+        {start: 0x2BC0, end: 0x2BFF, ram: this.attrTables[2]},
+        {start: 0x2C00, end: 0x2FBF, ram: this.nameTables[3]},
+        {start: 0x2FC0, end: 0x2FFF, ram: this.attrTables[3]},
+        {start: 0x3F00, end: 0x3F0F, ram: this.backgroundPalettes, 
+            onWrite: this.onPaletteWrite.bind(this)},
+        {start: 0x3F10, end: 0x3F1F, ram: this.spritePalettes, 
+            onWrite: this.onPaletteWrite.bind(this)}
+    ];
 
     private mirroringMode: number = 0; // 0 horizontal 1 verticle
 
@@ -147,14 +153,23 @@ export class PPU {
         }
     }
 
-    private writeToMem(value: number, address: number) {
+    private writeToMem(value: number, address: number, runCallbacks: boolean = true) { // set runCallbacks to false when running in a callback to prevent unwanted recursion
         //console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
-        let memoryMapArray = Array.from(this.memoryMap);
-        let index = memoryMapArray.findIndex(([range, ram]) => (address % 0x3F20) >= range[0] && (address % 0x3F20) <= range[1]); //finds the correct ram object from a given memory address
-        let startAddress = memoryMapArray[index][0][0] // gets the starting address of the section of memory
-        let ramObject = memoryMapArray[index][1]
-        ramObject.write(value, address - startAddress); // converts the address to an index to index the ram object
+        const memoryRegion = this.memoryRegions[this.memoryRegions.findIndex((region) => (address % 0x3F20) >= region.start && (address % 0x3F20) <= region.end)]; //finds the correct ram object from a given memory address
+        memoryRegion.ram.write(value, address - memoryRegion.start); // converts the address to an index to index the ram object
 
+        if (memoryRegion.onWrite && runCallbacks) {
+            memoryRegion.onWrite(value, address);
+        }
+    }
+
+    private onPaletteWrite(value: number, address: number) {
+        if (address % 4 === 0) {
+            //every 1st byte of a palette is the background color of that palette
+            //setting it in either the background or sprite palette changes it in the other
+            const mirroredAddress = (address ^ 0x10) % 0x10; // address of the opposite palette and mirroring
+            this.writeToMem(value, mirroredAddress, false);
+        }
     }
 
     public tick() {

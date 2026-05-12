@@ -24,12 +24,12 @@ export class Bus {
     public read(address : number) : number {
         if(address < 0x2000){
 
-            return this.ram.read(address % 0x800);
+            return this.ram.read(address % 0x800); // mirroring every 2KB
 
         } else if(address < 0x4000){
 
             try {
-                return this.ppu.readRegister(0x2000 + (address % 8));
+                return this.ppu.readRegister(0x2000 + (address % 8)); // mirroring every 8 bytes
             } catch(err){
                 throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
             }
@@ -53,7 +53,7 @@ export class Bus {
             try {
                 this.ppu.writeRegister(value, 0x2000 + (address % 8));
             } catch(err){
-                //throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
             }
 
         } else if(address === reg.OAMDMA){ //OAM DMA
