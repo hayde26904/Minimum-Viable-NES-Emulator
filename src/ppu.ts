@@ -27,6 +27,11 @@ const colorMap = [
     [248, 216, 120], [216, 248, 120], [184, 248, 184], [184, 248, 216], [0, 252, 252], [248, 216, 248], [0, 0, 0], [0, 0, 0]
 ];
 
+interface MemoryMapValue {
+    ram: RAM;
+    callback?: CallableFunction;
+}
+
 export class PPU {
 
     public outputScaleX: number = 4;
@@ -44,8 +49,8 @@ export class PPU {
     private oam: RAM = new RAM(0xFF);
 
     // maps different RAM to different addresses
-    private memoryMap: Map<Array<number>, RAM> = new Map([
-        [[0x0000, 0x0FFF], this.patternTables[0]],
+    private memoryMap: Map<Array<number>, MemoryMapValue> = new Map([
+        [[0x0000, 0x0FFF], {ram: this.patternTables[0]}],
         [[0x1000, 0x1FFF], this.patternTables[1]],
         [[0x2000, 0x23BF], this.nameTables[0]],
         [[0x23C0, 0x23C0+0x40], this.attrTables[0]],
