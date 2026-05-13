@@ -16,8 +16,8 @@ const NMI_CYCLE = 27507
 
 const NES_FRAME_TIME = 1000 / 60.098; // ~16.64ms per frame
 
-let canvas = document.getElementById('canvas') as HTMLCanvasElement;
-let ctx = canvas.getContext('2d');
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d');
 
 ctx.imageSmoothingEnabled = false;
 
@@ -29,12 +29,12 @@ canvas.height = 960;
 //ctx.scale(4, 4);
 
 let mapper: Mapper;
-let cpu: CPU = new CPU();
-let ppu: PPU = new PPU(ctx);
+const cpu: CPU = new CPU();
+const ppu: PPU = new PPU(ctx);
 
 ppu.setNMIhandler(cpu.goToNMI.bind(cpu));
 
-let bus: Bus = new Bus(cpu, ppu);
+const bus: Bus = new Bus(cpu, ppu);
 cpu.setBus(bus);
 ppu.setBus(bus);
 
@@ -53,7 +53,6 @@ document.getElementById('romInput')?.addEventListener('change', (event) => {
         const romData = new Uint8Array(e.target.result as ArrayBuffer);
         let testRom: ROM = new ROM(romData);
         loadProgram(testRom);
-        //setInterval(loop, 1000/60);
         loop();
       }
     };
@@ -79,6 +78,7 @@ function loadProgram(rom: ROM) {
   console.log(mapper);
 
   cpu.reset();
+  ppu.reset();
   cpu.loadProgram(prg);
   ppu.loadCHR(chr);
 

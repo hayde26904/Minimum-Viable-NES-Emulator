@@ -54,20 +54,24 @@ export class PPU {
 
     // maps different RAM to different addresses
     private memoryRegions: MemoryRegion[] = [
-        {start: 0x0000, end: 0x0FFF, ram: this.patternTables[0]},
-        {start: 0x1000, end: 0x1FFF, ram: this.patternTables[1]},
-        {start: 0x2000, end: 0x23BF, ram: this.nameTables[0]},
-        {start: 0x23C0, end: 0x23FF, ram: this.attrTables[0]},
-        {start: 0x2400, end: 0x27BF, ram: this.nameTables[1]},
-        {start: 0x27C0, end: 0x27FF, ram: this.attrTables[1]},
-        {start: 0x2800, end: 0x2BBF, ram: this.nameTables[2]},
-        {start: 0x2BC0, end: 0x2BFF, ram: this.attrTables[2]},
-        {start: 0x2C00, end: 0x2FBF, ram: this.nameTables[3]},
-        {start: 0x2FC0, end: 0x2FFF, ram: this.attrTables[3]},
-        {start: 0x3F00, end: 0x3F0F, ram: this.backgroundPalettes, 
-            onWrite: this.onPaletteWrite.bind(this)},
-        {start: 0x3F10, end: 0x3F1F, ram: this.spritePalettes, 
-            onWrite: this.onPaletteWrite.bind(this)}
+        { start: 0x0000, end: 0x0FFF, ram: this.patternTables[0] },
+        { start: 0x1000, end: 0x1FFF, ram: this.patternTables[1] },
+        { start: 0x2000, end: 0x23BF, ram: this.nameTables[0] },
+        { start: 0x23C0, end: 0x23FF, ram: this.attrTables[0] },
+        { start: 0x2400, end: 0x27BF, ram: this.nameTables[1] },
+        { start: 0x27C0, end: 0x27FF, ram: this.attrTables[1] },
+        { start: 0x2800, end: 0x2BBF, ram: this.nameTables[2] },
+        { start: 0x2BC0, end: 0x2BFF, ram: this.attrTables[2] },
+        { start: 0x2C00, end: 0x2FBF, ram: this.nameTables[3] },
+        { start: 0x2FC0, end: 0x2FFF, ram: this.attrTables[3] },
+        {
+            start: 0x3F00, end: 0x3F0F, ram: this.backgroundPalettes,
+            onWrite: this.onPaletteWrite.bind(this)
+        },
+        {
+            start: 0x3F10, end: 0x3F1F, ram: this.spritePalettes,
+            onWrite: this.onPaletteWrite.bind(this)
+        }
     ];
 
     private mirroringMode: number = 0; // 0 horizontal 1 verticle
@@ -117,6 +121,18 @@ export class PPU {
         this.ctx = ctx;
         this.frameBuffer = this.ctx.createImageData(this.ctx.canvas.width, this.ctx.canvas.height);
 
+    }
+
+    public reset() {
+
+        this.writeRegister(0, reg.PPUCTRL);
+        this.writeRegister(0, reg.PPUMASK);
+        this.writeRegister(0, reg.OAMADDR);
+        this.writeRegister(0, reg.OAMDATA);
+        this.writeRegister(0, reg.PPUSCROLL);
+        this.writeRegister(0, reg.PPUADDR);
+        this.writeRegister(0, reg.PPUDATA);
+        
     }
 
     public setNMIhandler(callback: CallableFunction) {
@@ -340,19 +356,9 @@ export class PPU {
         }
     }
 
-    private getColorIndex(chrBit: number, attrBit: number) {
-        if (attrBit === 0 && chrBit === 0) {
-            return 0;
-        } else if (attrBit === 0 && chrBit === 1) {
-            return 1;
-        } else if (attrBit === 1 && chrBit === 0) {
-            return 2;
-        } else if (attrBit === 1 && chrBit === 1) {
-            return 3;
-        }
-    }
-
-    private drawPixel(x: number, y: number, r: number, g: number, b: number, scaleX: number = 1, scaleY: number = 1) {
+    private drawPixel(x: number, y: number, r: number, g: number, b: number, scaleOverrideX?: number, scaleOverrideY?: number) {
+        const scaleX = scaleOverrideX | this.outputScaleX;
+        const scaleY = scaleOverrideY | this.outputScaleY;
         for (let dx = 0; dx < scaleX; dx++) {
             for (let dy = 0; dy < scaleY; dy++) {
                 let index = ((y * scaleY + dy) * this.ctx.canvas.width + (x * scaleX + dx)) * 4;
@@ -366,23 +372,23 @@ export class PPU {
 
     private drawTile(tile: number, xPos: number, yPos: number, palette: Uint8Array, flipH: boolean, flipV: boolean, priority: boolean, patternTable: RAM, backgroundTransparent: boolean) {
         //pattern tables start at address 0 in PPU memory
-        let chrIndex = tile * 16;
+        const chrIndex = tile * 16;
 
         for (let r = 0; r < 8; r++) {
-            let chrRow = patternTable.read(chrIndex + r);
-            let attrRow = patternTable.read(chrIndex + r + 8);
-            let x = xPos;
-            let y = yPos + r;
+            const chrRow = patternTable.read(chrIndex + r);
+            const attrRow = patternTable.read(chrIndex + r + 8);
+            const x = xPos;
+            const y = yPos + r;
 
             for (let b = 0; b < 8; b++) {
-                let chrBit = (chrRow >> (7 - b)) & 1;
-                let attrBit = (attrRow >> (7 - b)) & 1;
+                const chrBit = (chrRow >> (7 - b)) & 1;
+                const attrBit = (attrRow >> (7 - b)) & 1;
 
-                let colorIndex = this.getColorIndex(chrBit, attrBit);
-                let colorId = palette[colorIndex];
-                let color = colorMap[colorId];
+                const colorIndex = (attrBit << 1) | chrBit;
+                const colorId = palette[colorIndex];
+                const color = colorMap[colorId];
                 // TRANSPARENCY
-                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color[0], color[1], color[2], this.outputScaleX, this.outputScaleY) //this.ctx.fillRect(x + b, y, 1, 1);
+                if (!(colorIndex === 0 && backgroundTransparent)) this.drawPixel(x + b, y, color[0], color[1], color[2]) //this.ctx.fillRect(x + b, y, 1, 1);
             }
 
         }
@@ -412,42 +418,64 @@ export class PPU {
     }
 
     private drawBackground() {
-        
+
         let nametable = this.nameTables[this.currentNametable];
+        const debugAttr = [];
 
         for (let i = 0; i < nametable.getSize(); i++) {
             const tileIndex = nametable.read(i);
             const xPos = (i % 32) * 8;
             const yPos = Math.floor(i / 32) * 8;
-            const attrX = Math.floor(i / 2) % 8;
-            const attrY = Math.floor(i / 128); // not sure, I just increased the number until it worked
+            const attrX = Math.floor(i / 4) % 8; // each attr byte controls a 4x4 tile region
+            const attrY = Math.floor(i / 4 / 8);
+            const quadX = Math.floor(i / 2) % 2;
+            const quadY = Math.floor(i / 32 / 2);
             const attrIndex = (attrY * 8) + attrX;
-            const paletteIndex = this.attrTables[this.currentNametable].read(attrIndex);
+            const quadIndex = quadY + quadX;
+            const attr = this.attrTables[this.currentNametable].read(attrIndex);
+            const palette = new Uint8Array(this.testPalette);
+            /*const paletteIndex = 
             const palette = new Uint8Array(4);
             palette[0] = this.backgroundPalettes.read(paletteIndex);
             palette[1] = this.backgroundPalettes.read(paletteIndex + 1);
             palette[2] = this.backgroundPalettes.read(paletteIndex + 2);
-            palette[3] = this.backgroundPalettes.read(paletteIndex + 3);
+            palette[3] = this.backgroundPalettes.read(paletteIndex + 3);*/
 
             this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[1], false);
+            debugAttr.push({ x: attrX, y: attrY, i: attrIndex, attr: attr, quadX: quadX, quadY: quadY });
         }
+
+        return debugAttr;
     }
 
     public draw() {
 
         this.copySpritesFromOamDma();
 
-        this.drawBackground();
+        const debugAttr = this.drawBackground();
         this.drawSprites();
 
         this.ctx.putImageData(this.frameBuffer, 0, 0);
         this.frameBuffer.data.fill(0);
 
-        for(let c=0; c < this.backgroundPalettes.getSize();c++){
+        /*for(let c=0; c < this.backgroundPalettes.getSize();c++){
             let colorRGB = colorMap[this.backgroundPalettes.read(c)];
             let color = '#'+ Util.hex(colorRGB[0]) + Util.hex(colorRGB[1]) + Util.hex(colorRGB[2]);
             this.ctx.fillStyle = color;
             this.ctx.fillRect(c * 16, 0, 16, 16);
+        }*/
+
+        for (let obj of debugAttr) {
+            const x = obj.x * 32;
+            const y = obj.y * 32;
+            const quadColors = ["red", "green", "yellow", "orange"];
+            const attr = this.attrTables[this.currentNametable].read(obj.i);
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(x * this.outputScaleX, y * this.outputScaleY, this.outputScaleX, this.outputScaleY);
+            this.ctx.fillText(Util.hex(obj.attr), x * this.outputScaleX, y * this.outputScaleY)
+            if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle = 'red';
+            if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle = 'red';
+            this.ctx.fillRect((x + (obj.quadX * 16)) * this.outputScaleX, (y + (obj.quadY * 16)) * this.outputScaleY, this.outputScaleX, this.outputScaleY);
         }
 
     }
