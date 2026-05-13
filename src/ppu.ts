@@ -429,7 +429,7 @@ export class PPU {
             const attrX = Math.floor(i / 4) % 8; // each attr byte controls a 4x4 tile region
             const attrY = Math.floor(i / 4 / 8);
             const quadX = Math.floor(i / 2) % 2;
-            const quadY = Math.floor(i / 32 / 2);
+            const quadY = Math.floor(i / 32);
             const attrIndex = (attrY * 8) + attrX;
             const quadIndex = quadY + quadX;
             const attr = this.attrTables[this.currentNametable].read(attrIndex);
@@ -471,10 +471,12 @@ export class PPU {
             const quadColors = ["red", "green", "yellow", "orange"];
             const attr = this.attrTables[this.currentNametable].read(obj.i);
             this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(x * this.outputScaleX, y * this.outputScaleY, this.outputScaleX, this.outputScaleY);
+            //this.ctx.fillRect(x * this.outputScaleX, y * this.outputScaleY, this.outputScaleX, this.outputScaleY);
             this.ctx.fillText(Util.hex(obj.attr), x * this.outputScaleX, y * this.outputScaleY)
             if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle = 'red';
-            if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle = 'red';
+            if (obj.quadX === 1 && obj.quadY === 0) this.ctx.fillStyle = 'green';
+            if (obj.quadX === 0 && obj.quadY === 1) this.ctx.fillStyle = 'yellow';
+            if (obj.quadX === 1 && obj.quadY === 1) this.ctx.fillStyle = 'pink';
             this.ctx.fillRect((x + (obj.quadX * 16)) * this.outputScaleX, (y + (obj.quadY * 16)) * this.outputScaleY, this.outputScaleX, this.outputScaleY);
         }
 
