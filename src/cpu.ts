@@ -31,11 +31,11 @@ export const enum addrModes {
     ACCUMULATOR,
     RELATIVE,
     INDIRECT,
-    INDIRECT_X, //(a,x)
-    INDIRECT_Y //(a),y
+    INDIRECT_X, // (a,x)
+    INDIRECT_Y // (a),y
 }
 
-export const addrModeSizeMap : Map<number,number> = new Map<number,number>([
+export const addrModeSizeMap: Map<number, number> = new Map<number, number>([
     [addrModes.IMPLICIT, 1],
     [addrModes.IMMEDIATE, 2],
     [addrModes.ZEROPAGE, 2],
@@ -51,7 +51,7 @@ export const addrModeSizeMap : Map<number,number> = new Map<number,number>([
     [addrModes.INDIRECT_Y, 2]
 ]);
 
-export const addrModeHandlerMap : Map<number, addrModeHandlers.addrModeHandler> = new Map<number, addrModeHandlers.addrModeHandler>([
+export const addrModeHandlerMap: Map<number, addrModeHandlers.addrModeHandler> = new Map<number, addrModeHandlers.addrModeHandler>([
     [addrModes.IMPLICIT, addrModeHandlers.implicit],
     [addrModes.IMMEDIATE, addrModeHandlers.immediate],
     [addrModes.ZEROPAGE, addrModeHandlers.zeropage],
@@ -100,15 +100,15 @@ export class CPU {
 
     }
 
-    public setBus(bus : Bus){
+    public setBus(bus: Bus) {
         this.bus = bus;
     }
 
-    public readFromMem(address : number){
+    public readFromMem(address: number) {
         return this.bus.read(address);
     }
 
-    public writeToMem(value : number, address : number){
+    public writeToMem(value: number, address: number) {
         this.bus.write(value, address);
     }
 
@@ -145,13 +145,13 @@ export class CPU {
     }
 
     //returns number of cycles used
-    public executeNextOperation(): number {
+    public executeNextOperation(logOpInfo: boolean = false): number {
 
         let opcode = this.bus.read(this.PC);
         let operation = opcodeMap.get(opcode);
 
-        if(operation){
-            
+        if (operation) {
+
             let opMethod = operation.method;
             let opAddrMode = operation.addrMode;
             let opArgType = operation.argType;
@@ -159,7 +159,7 @@ export class CPU {
             let opSize = addrModeSizeMap.get(opAddrMode);
             let numArgs = opSize - 1;
 
-            for(let i = 0; i < numArgs; i++){
+            for (let i = 0; i < numArgs; i++) {
                 this.opArgs[i] = this.bus.read(this.PC + i + 1);
             }
 
@@ -177,19 +177,32 @@ export class CPU {
             let oldPC = this.PC;
             this.PC += opSize;
 
-            opMethod(this, evaluatedArg);
+            const opInfo = opMethod(this, evaluatedArg);
+
+            if (logOpInfo) {
+                console.log({
+                    PC: Util.hex(oldPC),
+                    name: operation.name,
+                    log: opInfo.log,
+                    A: Util.hex(this.Areg),
+                    X: Util.hex(this.Xreg),
+                    Y: Util.hex(this.Yreg),
+                    SP: this.SP,
+                    opcode: Util.hex(opcode)
+                });
+            }
 
             return opCycles;
 
         } else {
-            console.log(`PC: ${this.PC}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
+            console.log(`PC: ${Util.hex(this.PC)}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
             return 1; //1 cycle I guess
         }
     }
 
-    public goToNMI(){
+    public goToNMI() {
         let [lo, hi] = Util.addrToBytes(this.getPC());
         this.setInterruptDisable();
         this.pushToStack(this.getStatusReg());
@@ -253,68 +266,68 @@ export class CPU {
 
     }
 
-    public setStatusReg(byte : number) : void{
-        let guh : boolean;
+    public setStatusReg(byte: number): void {
+        let guh: boolean;
         [this.Nflag, this.Oflag, guh, this.Bflag, this.Dflag, this.Iflag, this.Zflag, this.Cflag] = Util.bitmaskToBools(byte);
     }
 
-    public pushToStack(value : number): void{
+    public pushToStack(value: number): void {
         this.SP--;
         this.stack.write(value, this.getSP());
         //console.log(`Pushed ${Util.hex(value)} SP: ${Util.hex(this.SP)}`);
     }
 
-    public pullFromStack() : number {
+    public pullFromStack(): number {
         let value = this.stack.read(this.getSP());
         this.SP++;
         //console.log(`Pulled SP: ${Util.hex(value)}  new SP: ${Util.hex(this.SP)}`);
         return value;
     }
 
-    public setCarry(){
+    public setCarry() {
         this.Cflag = true;
     }
 
-    public clearCarry(){
+    public clearCarry() {
         this.Cflag = false;
     }
 
-    public setZero(){
+    public setZero() {
         this.Zflag = true;
     }
 
-    public clearZero(){
+    public clearZero() {
         this.Zflag = false;
     }
 
-    public setNegative(){
+    public setNegative() {
         this.Nflag = true;
     }
 
-    public clearNegative(){
+    public clearNegative() {
         this.Nflag = false;
     }
 
-    public setOverflow(){
+    public setOverflow() {
         this.Oflag = true;
     }
 
-    public clearOverflow(){
+    public clearOverflow() {
         this.Oflag = false;
     }
 
-    public setInterruptDisable(){
+    public setInterruptDisable() {
         this.Iflag = true;
     }
 
-    public clearInterruptDisable(){
+    public clearInterruptDisable() {
         this.Iflag = false;
     }
 
     public setFlags(value: number): void {
-
-        this.Zflag = (value === 0);
-        this.Nflag = (value & 0x80) === 0x80;
+        const maskedValue = value & 0xFF;
+        this.Zflag = (maskedValue === 0);
+        this.Nflag = (maskedValue & 0x80) === 0x80;
 
     };
 
@@ -330,23 +343,23 @@ export class CPU {
         }
     }
 
-    public isInNMI() : boolean {
+    public isInNMI(): boolean {
         return this.NMITriggered;
     }
 
-    public endNMI() : void {
+    public endNMI(): void {
         this.NMITriggered = false;
     }
 
-    public log(message: string) : void {
+    public log(message: string): void {
         //console.logs.push(message);
     }
 
-    public getLogs() : string[] {
+    public getLogs(): string[] {
         return //console.logs;
     }
 
-    public clearLogs() : void {
+    public clearLogs(): void {
         //console.logs.length = 0;
     }
 

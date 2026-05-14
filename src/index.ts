@@ -41,6 +41,24 @@ ppu.setBus(bus);
 let currentPrgRom: ROM;
 
 document.getElementById('nmi-btn')?.addEventListener('click', ppu.NMI.bind(ppu));
+document.getElementById('next-op-btn')?.addEventListener('click', cpu.executeNextOperation.bind(cpu, true));
+document.getElementById('pause-btn')?.addEventListener('click', () => {
+  if(cpuPaused){
+    resume();
+  } else {
+    pause();
+  }
+});
+
+const breakpointInput = document.getElementById('breakpoint-addr-input') as HTMLInputElement;
+breakpointInput.addEventListener('change', () => {
+  const value = breakpointInput.value;
+  if (value) {
+    breakpoint = parseInt(value, 16);
+  } else {
+    breakpoint = null;
+  }
+});
 
 document.getElementById('romInput')?.addEventListener('change', (event) => {
   const input = event.target as HTMLInputElement;
@@ -87,6 +105,20 @@ function loadProgram(rom: ROM) {
 
 
 let lastFrameTime = performance.now();
+let cpuPaused = false;
+let breakpoint: number | null = null;
+
+function pause(){
+  cpuPaused = true
+  document.getElementById('pause-btn')!.textContent = "Resume";
+}
+
+function resume() {
+  cpuPaused = false;
+  document.getElementById('pause-btn')!.textContent = "Pause";
+}
+
+pause();
 
 function loop() {
 
@@ -100,28 +132,41 @@ function loop() {
   }
 
   //const cyclesToExecute = Math.floor((CYCLES_PER_SECOND / TARGET_FPS) * (deltaTime / 1000));
-  const cyclesToExecuteFrame = Math.floor(CYCLES_PER_FRAME);
-  let cyclesExecuted = 0;
-
-
-  //console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
-  while (cyclesExecuted < cyclesToExecuteFrame) {
-    const cycles = cpu.executeNextOperation();
-    cyclesExecuted += cycles;
-
-    for (let i = 0; i < cycles * 3; i++){
-      ppu.tick();
-    }
-    
-  }
+  const cyclesToExecuteFrame = CYCLES_PER_FRAME;
+  
+  executeCPUCycles(cyclesToExecuteFrame);
 
   //console.log(`FRAME END  PC: ${Util.hex(cpu.getPC())}`);
-
-  cyclesExecuted = 0;
   //console.log(`NMI START  PC: ${Util.hex(cpu.getPC())}`);
   //console.log(`NMI END  PC: ${Util.hex(cpu.getPC())}`);
 
   lastFrameTime = currentTime;
   requestAnimationFrame(loop);
+
+}
+
+function executeCPUCycles(cyclesToExecute: number) {
+  if (cpuPaused) return;
+  let cyclesExecuted = 0;
+
+  //console.log(`FRAME START  PC: ${Util.hex(cpu.getPC())}`);
+  while (cyclesExecuted < cyclesToExecute) {
+
+    const cycles = cpu.executeNextOperation(false);
+    cyclesExecuted += cycles;
+
+    for (let i = 0; i < cycles * 3; i++){
+      ppu.tick();
+    }
+
+    if (breakpoint !== null && cpu.getPC() === breakpoint) {
+      console.log(`Hit breakpoint at ${Util.hex(breakpoint)}!`);
+      pause();
+      break;
+    }
+    
+  }
+
+  return cyclesExecuted;
 
 }

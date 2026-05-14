@@ -62,18 +62,18 @@ export function indirect(bus : Bus, cpu : CPU, args : Uint8Array, argType : numb
 
 export function indirectX(bus : Bus, cpu : CPU, args : Uint8Array, argType : number) : number {
 
-    let addr = Util.bytesToAddr(args[0], args[1]) + cpu.getXreg();
-    let lo = bus.read(addr);
-    let hi = bus.read(addr + 1);
+    let zpAddr = (args[0] + cpu.getXreg()) & 0xFF;
+    let lo = bus.read(zpAddr);
+    let hi = bus.read((zpAddr + 1) & 0xFF);
     return Util.bytesToAddr(lo, hi);
 
 }
 
 export function indirectY(bus : Bus, cpu : CPU, args : Uint8Array, argType : number) : number {
 
-    let addr = Util.bytesToAddr(args[0], args[1]);
-    let lo = bus.read(addr);
-    let hi = bus.read(addr + 1);
+    let zpAddr = args[0];
+    let lo = bus.read(zpAddr);
+    let hi = bus.read((zpAddr + 1) & 0xFF);
     return Util.bytesToAddr(lo, hi) + cpu.getYreg();
 
 }
