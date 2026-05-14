@@ -182,7 +182,7 @@ export class CPU {
             return opCycles;
 
         } else {
-            //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
+            console.log(`PC: ${this.PC}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
             return 1; //1 cycle I guess

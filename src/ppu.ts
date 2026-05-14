@@ -427,7 +427,7 @@ export class PPU {
             const xPos = (i % 32) * 8;
             const yPos = Math.floor(i / 32) * 8;
             const attrX = Math.floor(i / 4) % 8; // each attr byte controls a 4x4 tile region
-            const attrY = Math.floor(i / 4 / 8);
+            const attrY = Math.floor(i / 128);
             const quadX = Math.floor(i / 2) % 2; // 0 or 1
             const quadY = Math.floor(i / 64) % 2;
             const attrIndex = (attrY * 8) + attrX;
@@ -435,13 +435,13 @@ export class PPU {
             const attr = this.attrTables[this.currentNametable].read(attrIndex);
             const paletteIndex = ((attr >> (quadIndex * 2)) & 3) * 4; // each quadrant of the attribute byte is 2 bits that specifies the palette index for that quadrant, so shift the attribute byte to get the correct quadrant and then mask with 3 to get the last 2 bits for the palette index
             const palette = new Uint8Array(4);
-            palette[0] = this.backgroundPalettes.read(paletteIndex);
+            palette[0] = this.backgroundPalettes.read(0x00); // global background color
             palette[1] = this.backgroundPalettes.read(paletteIndex + 1);
             palette[2] = this.backgroundPalettes.read(paletteIndex + 2);
             palette[3] = this.backgroundPalettes.read(paletteIndex + 3);
 
             this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[1], false);
-            debugAttr.push({ tileI: i, x: attrX, y: attrY, i: attrIndex, attr: attr, quadX: quadX, quadY: quadY, quadIndex: quadIndex, paletteIndex: paletteIndex, palette: palette });
+            debugAttr.push({x: xPos, y: yPos, quadX, quadY, paletteIndex, attrX, attrY});
         }
 
         return debugAttr;
@@ -463,23 +463,19 @@ export class PPU {
             this.ctx.fillStyle = color;
             this.ctx.fillRect(c * 16, 0, 16, 16);
         }
-
-        for (let obj of debugAttr) {
-            const x = obj.x * 32;
-            const y = obj.y * 32;
-            const quadColors = ["red", "green", "yellow", "orange"];
-            const attr = this.attrTables[this.currentNametable].read(obj.i);
-            this.ctx.fillStyle = '#000';
-            //this.ctx.fillRect(x * this.outputScaleX, y * this.outputScaleY, this.outputScaleX, this.outputScaleY);
-            //this.ctx.fillText(Util.hex(attr), (x * this.outputScaleX), (y * this.outputScaleY) + 10)
-            //this.ctx.fillText(Util.hex(obj.quadY), (x * this.outputScaleX), (y * this.outputScaleY) + 10)
-            if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle = 'red';
-            if (obj.quadX === 1 && obj.quadY === 0) this.ctx.fillStyle = 'green';
-            if (obj.quadX === 0 && obj.quadY === 1) this.ctx.fillStyle = 'yellow';
-            if (obj.quadX === 1 && obj.quadY === 1) this.ctx.fillStyle = 'pink';
-            if ((obj.quadX !== 0 && obj.quadX !== 1) || (obj.quadY !== 0 && obj.quadY !== 1)) console.log(`quadX: ${obj.quadX}  quadY: ${obj.quadY}`);
-            this.ctx.fillText(Util.hex(obj.paletteIndex), (x + (obj.quadX * 16)) * this.outputScaleX, (y + (obj.quadY * 16)) * this.outputScaleY)
-            //this.ctx.fillRect((x + (obj.quadX * 16)) * this.outputScaleX, (y + (obj.quadY * 16)) * this.outputScaleY, 16 * this.outputScaleX, 16 * this.outputScaleY);
+        return;
+        for (let i=0;i<debugAttr.length;i++){
+            const obj = debugAttr[i];
+            this.ctx.globalAlpha = 0.9;
+            if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle='red';
+            if (obj.quadX === 1 && obj.quadY === 0) this.ctx.fillStyle='green';
+            if (obj.quadX === 0 && obj.quadY === 1) this.ctx.fillStyle='yellow';
+            if (obj.quadX === 1 && obj.quadY === 1) this.ctx.fillStyle='pink';
+            this.ctx.fillRect(obj.attrX*32,obj.attrY*32, 32 * this.outputScaleX, 32 * this.outputScaleY);
+            this.ctx.fillStyle='#000';
+            this.ctx.font='Arial 30px';
+            this.ctx.globalAlpha = 1;
+            this.ctx.fillText(String(obj.paletteIndex/4), obj.x * this.outputScaleX, obj.y * this.outputScaleY);
         }
 
     }
