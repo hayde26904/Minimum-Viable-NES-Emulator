@@ -18,7 +18,7 @@ export class Bus {
                 return this.ppu.readRegister(0x2000 + (address % 8));
             }
             catch (err) {
-                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  failed to read from PPU register ${Util.hex(0x2000 + (address % 8))}`);
             }
         }
         else if (address >= 0x8000) {

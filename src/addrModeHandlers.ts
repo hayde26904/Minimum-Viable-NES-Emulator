@@ -75,5 +75,4 @@ export function indirectY(bus : Bus, cpu : CPU, args : Uint8Array, argType : num
     let lo = bus.read(zpAddr);
     let hi = bus.read((zpAddr + 1) & 0xFF);
     return Util.bytesToAddr(lo, hi) + cpu.getYreg();
-
 }

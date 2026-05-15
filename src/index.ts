@@ -42,12 +42,17 @@ let currentPrgRom: ROM;
 
 document.getElementById('nmi-btn')?.addEventListener('click', ppu.NMI.bind(ppu));
 document.getElementById('next-op-btn')?.addEventListener('click', cpu.executeNextOperation.bind(cpu, true));
+document.getElementById('last-op-btn')?.addEventListener('click', cpu.executeLastOperation.bind(cpu, true));
 document.getElementById('pause-btn')?.addEventListener('click', () => {
   if(cpuPaused){
     resume();
   } else {
     pause();
   }
+});
+document.getElementById('log-var-btn')?.addEventListener('click', () => {
+  const val = (document.getElementById('log-var-input') as HTMLInputElement).value;
+  console.log(eval(val)); // eval is generally bad but this is just for debugging so its fine
 });
 
 const breakpointInput = document.getElementById('breakpoint-addr-input') as HTMLInputElement;
@@ -153,6 +158,10 @@ function executeCPUCycles(cyclesToExecute: number) {
   while (cyclesExecuted < cyclesToExecute) {
 
     const cycles = cpu.executeNextOperation(false);
+    if (cycles === -1) {
+      pause();
+      break;
+    }
     cyclesExecuted += cycles;
 
     for (let i = 0; i < cycles * 3; i++){

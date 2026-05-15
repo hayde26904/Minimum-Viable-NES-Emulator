@@ -463,7 +463,6 @@ export class PPU {
             this.ctx.fillStyle = color;
             this.ctx.fillRect(c * 16, 0, 16, 16);
         }
-        return;
         for (let i=0;i<debugAttr.length;i++){
             const obj = debugAttr[i];
             this.ctx.globalAlpha = 0.9;
@@ -471,10 +470,10 @@ export class PPU {
             if (obj.quadX === 1 && obj.quadY === 0) this.ctx.fillStyle='green';
             if (obj.quadX === 0 && obj.quadY === 1) this.ctx.fillStyle='yellow';
             if (obj.quadX === 1 && obj.quadY === 1) this.ctx.fillStyle='pink';
-            this.ctx.fillRect(obj.attrX*32,obj.attrY*32, 32 * this.outputScaleX, 32 * this.outputScaleY);
             this.ctx.fillStyle='#000';
             this.ctx.font='Arial 30px';
             this.ctx.globalAlpha = 1;
+            this.ctx.fillStyle = 'white';
             this.ctx.fillText(String(obj.paletteIndex/4), obj.x * this.outputScaleX, obj.y * this.outputScaleY);
         }
 

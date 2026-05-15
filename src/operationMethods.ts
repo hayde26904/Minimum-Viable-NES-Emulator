@@ -1,10 +1,10 @@
-import { CPU } from "./cpu";
+import { CPU, addrModes } from "./cpu";
 import { Memory } from "./memory";
 import { RAM } from "./ram";
 import { Util } from "./util";
 
 export type operationInfo = { log: string };
-export type operationMethod = (cpu: CPU, arg: number) => operationInfo;
+export type operationMethod = (cpu: CPU, arg: number, addrMode?: number) => operationInfo;
 
 export function brk(cpu: CPU, arg: number) : operationInfo {
     return { log: "" };
@@ -330,4 +330,71 @@ export function php(cpu: CPU, arg: number) : operationInfo {
 export function plp(cpu: CPU, arg: number) : operationInfo {
     cpu.setStatusReg(cpu.pullFromStack());
     return { log: `Pulled Status Reg from stack` };
+}
+
+export function asl(cpu: CPU, arg: number, addrMode?: number) : operationInfo {
+    let result = (arg << 1) & 0xFF;
+
+    if (addrMode === addrModes.ACCUMULATOR) { // Accumulator mode
+        cpu.setAreg(result);
+    } else {
+        cpu.writeToMem(result, arg);
+    }
+
+    cpu.setFlags(result);
+
+    if((cpu.readFromMem(arg) & 0x80) === 0x80){
+        cpu.setCarry();
+    } else {
+        cpu.clearCarry();
+    }
+
+    return { log: `ASL on A ${Util.hex(arg)}` };
+}
+
+export function lsr(cpu: CPU, arg: number, addrMode?: number) : operationInfo {
+    let result = (arg >> 1) & 0xFF;
+
+    if (addrMode === addrModes.ACCUMULATOR) { // Accumulator mode
+        cpu.setAreg(result);
+    } else {
+        cpu.writeToMem(result, arg);
+    }
+
+    cpu.setFlags(result);
+
+    if((cpu.readFromMem(arg) & 0x01) === 0x01){
+        cpu.setCarry();
+    } else {
+        cpu.clearCarry();
+    }
+
+    return { log: `LSR on A ${Util.hex(arg)}` };
+}
+
+export function ror(cpu: CPU, arg: number, addrMode?: number) : operationInfo {
+    let c = Number(cpu.getFlags().C);
+    let result = ((arg >> 1) & 0xFF) | ((c << 7) & 0x80);
+
+    if (addrMode === addrModes.ACCUMULATOR) { // Accumulator mode
+        cpu.setAreg(result);
+    } else {
+        cpu.writeToMem(result, arg);
+    }
+
+    cpu.setFlags(result);
+
+    if((result & 0x01) === 0x01){
+        cpu.setCarry();
+    } else {
+        cpu.clearCarry();
+    }
+
+    return { log: `ROR on A ${Util.hex(arg)}` };
+}
+
+export function rol(cpu: CPU, arg: number, addrMode?: number) : operationInfo {
+    asl(cpu, arg, addrMode);
+    and(cpu, arg);
+    return { log: `RLA on A ${Util.hex(arg)}` };
 }

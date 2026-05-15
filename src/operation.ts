@@ -36,9 +36,9 @@ export const ops: Array<Operation> = [
     {
         name: "lda",
         method: opMethods.lda,
-        opCodes: [0xA9, 0xA5, 0xB5, 0xAD, 0xBD, 0xA1, 0xB1],
+        opCodes: [0xA9, 0xA5, 0xB5, 0xAD, 0xBD, 0xB9, 0xA1, 0xB1],
         addrModes: [addrModes.IMMEDIATE, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X, addrModes.ABSOLUTE_Y, addrModes.INDIRECT_X, addrModes.INDIRECT_Y],
-        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
         cycles: [2,3,4,4,4,4,6,5]
     },
 
@@ -421,6 +421,41 @@ export const ops: Array<Operation> = [
         cycles: [4]
     },
 
+    {
+        name: "asl",
+        method: opMethods.asl,
+        opCodes: [0x0A, 0x06, 0x16, 0x0E, 0x1E],
+        addrModes: [addrModes.ACCUMULATOR, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,5,6,6,7]
+    },
+
+    {
+        name: "lsr",
+        method: opMethods.lsr,
+        opCodes: [0x4A, 0x46, 0x56, 0x4E, 0x5E],
+        addrModes: [addrModes.ACCUMULATOR, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,5,6,6,7]
+    },
+
+    {
+        name: "ror",
+        method: opMethods.ror,
+        opCodes: [0x6A, 0x66, 0x76, 0x6E, 0x7E],
+        addrModes: [addrModes.ACCUMULATOR, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,5,6,6,7]
+    },
+
+    {
+        name: "rol",
+        method: opMethods.rol,
+        opCodes: [0x2A, 0x26, 0x36, 0x2E, 0x3E],
+        addrModes: [addrModes.ACCUMULATOR, addrModes.ZEROPAGE, addrModes.ZEROPAGE_X, addrModes.ABSOLUTE, addrModes.ABSOLUTE_X],
+        argTypes: [argTypes.value, argTypes.reference, argTypes.reference, argTypes.reference, argTypes.reference],
+        cycles: [2,5,6,6,7]
+    }
 
 ];
 

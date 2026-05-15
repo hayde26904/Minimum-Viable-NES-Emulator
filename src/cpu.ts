@@ -93,6 +93,13 @@ export class CPU {
     private opArgs = new Uint8Array(2); //reusable array for storing operation arguments, max size is 2 because the largest instruction is 3 bytes (1 for opcode and 2 for args)
 
     private logs = new Array<string>();
+    private lastOpInfo = {
+        size: 0,
+        A: 0,
+        X: 0,
+        Y: 0,
+        SP: 0
+    };
 
     constructor() {
 
@@ -177,19 +184,30 @@ export class CPU {
             let oldPC = this.PC;
             this.PC += opSize;
 
-            const opInfo = opMethod(this, evaluatedArg);
+            const opInfo = opMethod(this, evaluatedArg, opAddrMode);
+            const executionInfo = {
+                PC: Util.hex(oldPC),
+                name: operation.name,
+                log: opInfo.log,
+                A: Util.hex(this.Areg),
+                X: Util.hex(this.Xreg),
+                Y: Util.hex(this.Yreg),
+                SP: this.SP,
+                opcode: Util.hex(opcode),
+                args: Array.from(this.opArgs.slice(0, numArgs)).map(byte => Util.hex(byte)),
+                size: opSize
+            };
+
+            this.lastOpInfo = {
+                size: opSize,
+                A: this.Areg,
+                X: this.Xreg,
+                Y: this.Yreg,
+                SP: this.SP
+            }
 
             if (logOpInfo) {
-                console.log({
-                    PC: Util.hex(oldPC),
-                    name: operation.name,
-                    log: opInfo.log,
-                    A: Util.hex(this.Areg),
-                    X: Util.hex(this.Xreg),
-                    Y: Util.hex(this.Yreg),
-                    SP: this.SP,
-                    opcode: Util.hex(opcode)
-                });
+                console.log(executionInfo);
             }
 
             return opCycles;
@@ -198,8 +216,17 @@ export class CPU {
             console.log(`PC: ${Util.hex(this.PC)}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
-            return 1; //1 cycle I guess
+            return -1; // indicate invalid opcode with -1 cycles
         }
+    }
+
+    public executeLastOperation(logOpInfo: boolean = false): number {
+        this.PC -= this.lastOpInfo.size;
+        this.Areg = this.lastOpInfo.A;
+        this.Xreg = this.lastOpInfo.X;
+        this.Yreg = this.lastOpInfo.Y;
+        this.SP = this.lastOpInfo.SP;
+        return this.executeNextOperation(logOpInfo);
     }
 
     public goToNMI() {
