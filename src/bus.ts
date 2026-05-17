@@ -53,8 +53,8 @@ export class Bus {
             try {
                 this.ppu.writeRegister(value, 0x2000 + (address % 8));
             } catch(err){
-                console.log(err.stack);
-                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  error writing ${Util.hex(value)} to PPU register: ${Util.hex(address)}`);
+                //console.log(err.stack);
+                //throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  error writing ${Util.hex(value)} to PPU register: ${Util.hex(address)}`);
             }
 
         } else if(address === reg.OAMDMA){ //OAM DMA

@@ -100,6 +100,12 @@ function loadProgram(rom: ROM) {
   bus.setMapper(mapper);
   console.log(mapper);
 
+  console.log(`Mirroring mode: ${romInfo.nametableMirroring === headerParser.NametableMirroringTypes.HORIZONTAL ? "Horizontal" : "Vertical"}`);
+
+  ppu.setMirroringMode(romInfo.nametableMirroring);
+
+  ppu.cpu = cpu; // set reference to cpu in ppu for debugging purposes
+
   cpu.reset();
   ppu.reset();
   cpu.loadProgram(prg);
@@ -179,3 +185,9 @@ function executeCPUCycles(cyclesToExecute: number) {
   return cyclesExecuted;
 
 }
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'd') {
+        ppu.debugDumpNametable(0);
+    }
+});

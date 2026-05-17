@@ -38,6 +38,8 @@ interface MemoryRegion {
 
 export class PPU {
 
+    public cpu: CPU;
+
     public outputScaleX: number = 4;
     public outputScaleY: number = 4;
 
@@ -64,14 +66,8 @@ export class PPU {
         { start: 0x2BC0, end: 0x2BFF, ram: this.attrTables[2] },
         { start: 0x2C00, end: 0x2FBF, ram: this.nameTables[3] },
         { start: 0x2FC0, end: 0x2FFF, ram: this.attrTables[3] },
-        {
-            start: 0x3F00, end: 0x3F0F, ram: this.backgroundPalettes,
-            onWrite: this.onPaletteWrite.bind(this)
-        },
-        {
-            start: 0x3F10, end: 0x3F1F, ram: this.spritePalettes,
-            onWrite: this.onPaletteWrite.bind(this)
-        }
+        { start: 0x3F00, end: 0x3F0F, ram: this.backgroundPalettes },
+        { start: 0x3F10, end: 0x3F1F, ram: this.spritePalettes }
     ];
 
     private mirroringMode: number = 0; // 0 horizontal 1 verticle
@@ -125,14 +121,14 @@ export class PPU {
 
     public reset() {
 
-        this.writeRegister(0, reg.PPUCTRL);
+        /*this.writeRegister(0, reg.PPUCTRL);
         this.writeRegister(0, reg.PPUMASK);
         this.writeRegister(0, reg.OAMADDR);
         this.writeRegister(0, reg.OAMDATA);
         this.writeRegister(0, reg.PPUSCROLL);
         this.writeRegister(0, reg.PPUADDR);
-        this.writeRegister(0, reg.PPUDATA);
-        
+        this.writeRegister(0, reg.PPUDATA);*/
+
     }
 
     public setNMIhandler(callback: CallableFunction) {
@@ -173,22 +169,13 @@ export class PPU {
         //console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
         const memoryRegion = this.memoryRegions[this.memoryRegions.findIndex((region) => (address % 0x3F20) >= region.start && (address % 0x3F20) <= region.end)]; //finds the correct ram object from a given memory address
         if (!memoryRegion) {
-            console.log(`Attempted write to invalid PPU memory address: ${Util.hex(address)}`);
+            //console.log(`Attempted write to invalid PPU memory address: ${Util.hex(address)}`);
             return;
         }
         memoryRegion.ram.write(value, address - memoryRegion.start); // converts the address to an index to index the ram object
 
         if (memoryRegion.onWrite && runCallbacks) {
             memoryRegion.onWrite(value, address);
-        }
-    }
-
-    private onPaletteWrite(value: number, address: number) {
-        if (address % 4 === 0) {
-            //every 1st byte of a palette is the background color of that palette
-            //setting it in either the background or sprite palette changes it in the other
-            const mirroredAddress = (address ^ 0x10) % 0x10; // address of the opposite palette and mirroring
-            this.writeToMem(value, mirroredAddress, false);
         }
     }
 
@@ -218,6 +205,16 @@ export class PPU {
         this.NMIhandler();
     }
 
+
+
+    public debugDumpNametable(nametableIndex: number) {
+        const bytes = [];
+        for (let i = 0; i < 64; i++) {
+            bytes.push(Util.hex(this.nameTables[nametableIndex].read(i)));
+        }
+        console.log(bytes.join(' '));
+    }
+
     public readRegister(address: number) {
         switch (address) {
             case reg.PPUCTRL:
@@ -236,6 +233,8 @@ export class PPU {
             case reg.PPUSTATUS:
 
                 this.writeCounter = 0; // reset latch
+
+                console.log(`$2002 read PC: ${Util.hex(this.cpu.getPC())}`);
 
                 return Util.boolsToBitmask([
                     this.inVblank,
@@ -284,16 +283,15 @@ export class PPU {
 
         switch (address) {
             case reg.PPUCTRL:
-                [
-                    this.NMIenabled,
-                    this.masterSlave,
-                    this.spriteSizeMode,
-                    this.backgroundAddr,
-                    this.spriteAddr,
-                    this.vramIncrement
-                ] = Util.bitmaskToBools(value);
 
+                this.NMIenabled = Boolean(Util.getBit(value, 7));
+                this.masterSlave = Boolean(Util.getBit(value, 6));
+                this.spriteSizeMode = Boolean(Util.getBit(value, 5));
+                this.backgroundAddr = Boolean(Util.getBit(value, 4));
+                this.spriteAddr = Boolean(Util.getBit(value, 3));
+                this.vramIncrement = Boolean(Util.getBit(value, 2));
                 this.currentNametable = value & 3;
+
                 break;
 
             case reg.PPUMASK:
@@ -308,6 +306,7 @@ export class PPU {
                     this.showLeftBackground,
                     this.greyscale
                 ] = Util.bitmaskToBools(value);
+
                 break;
             case reg.OAMDMA:
                 this.oamDma = value;
@@ -339,6 +338,8 @@ export class PPU {
                 } else if (this.writeCounter === 1) { // lo byte
                     this.writeAddr |= value;
                 }
+
+                console.log(`$2006 write: ${Util.hex(value)} PC: ${Util.hex(this.cpu.getPC())} writeLatch: ${this.writeCounter} writeAddr: ${Util.hex(this.writeAddr)}`);
 
                 this.writeCounter++;
                 if (this.writeCounter > 1) this.writeCounter = 0;
@@ -423,7 +424,7 @@ export class PPU {
             if (spriteIndex === 0) this.spriteZeroHit = true; // set sprite zero hit flag if the first sprite in OAM is being drawn, used for some games to do things like split the screen
 
             //if (tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
-            this.drawTile(tileIndex, xPos, yPos, palette, flipH, flipV, false, this.patternTables[0], true);
+            this.drawTile(tileIndex, xPos, yPos, palette, flipH, flipV, false, this.patternTables[this.spriteAddr ? 1 : 0], true);
         }
     }
 
@@ -450,8 +451,8 @@ export class PPU {
             palette[2] = this.backgroundPalettes.read(paletteIndex + 2);
             palette[3] = this.backgroundPalettes.read(paletteIndex + 3);
 
-            this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[1], false);
-            debugAttr.push({x: xPos, y: yPos, quadX, quadY, paletteIndex, attrX, attrY});
+            this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[this.backgroundAddr ? 1 : 0], false);
+            debugAttr.push({ x: xPos, y: yPos, quadX, quadY, paletteIndex, attrX, attrY });
         }
 
         return debugAttr;
@@ -467,9 +468,9 @@ export class PPU {
         this.ctx.putImageData(this.frameBuffer, 0, 0);
         this.frameBuffer.data.fill(0);
 
-        for(let c=0; c < this.backgroundPalettes.getSize();c++){
+        for (let c = 0; c < this.backgroundPalettes.getSize(); c++) {
             let colorRGB = colorMap[this.backgroundPalettes.read(c)];
-            let color = '#'+ Util.hex(colorRGB[0]) + Util.hex(colorRGB[1]) + Util.hex(colorRGB[2]);
+            let color = '#' + Util.hex(colorRGB[0]) + Util.hex(colorRGB[1]) + Util.hex(colorRGB[2]);
             this.ctx.fillStyle = color;
             this.ctx.fillRect(c * 16, 0, 16, 16);
         }
@@ -486,6 +487,15 @@ export class PPU {
             this.ctx.fillStyle = 'white';
             this.ctx.fillText(String(obj.paletteIndex/4), obj.x * this.outputScaleX, obj.y * this.outputScaleY);
         }*/
+
+        for (let i = 0; i < this.nameTables[0].getSize(); i++) {
+            const tileIndex = this.nameTables[0].read(i);
+            const xPos = (i % 32) * 8;
+            const yPos = Math.floor(i / 32) * 8;
+            this.ctx.fillStyle = '#FFF';
+            this.ctx.font = 'Arial 30px';
+            this.ctx.fillText(Util.hex(tileIndex), xPos * this.outputScaleX, yPos * this.outputScaleY);
+        }
 
     }
 
