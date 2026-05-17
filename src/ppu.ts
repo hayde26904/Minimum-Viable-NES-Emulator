@@ -172,6 +172,10 @@ export class PPU {
     private writeToMem(value: number, address: number, runCallbacks: boolean = true) { // set runCallbacks to false when running in a callback to prevent unwanted recursion
         //console.log(`attempting data write of ${Util.hex(value)} to ${Util.hex(address)}`);
         const memoryRegion = this.memoryRegions[this.memoryRegions.findIndex((region) => (address % 0x3F20) >= region.start && (address % 0x3F20) <= region.end)]; //finds the correct ram object from a given memory address
+        if (!memoryRegion) {
+            console.log(`Attempted write to invalid PPU memory address: ${Util.hex(address)}`);
+            return;
+        }
         memoryRegion.ram.write(value, address - memoryRegion.start); // converts the address to an index to index the ram object
 
         if (memoryRegion.onWrite && runCallbacks) {
@@ -374,13 +378,16 @@ export class PPU {
         //pattern tables start at address 0 in PPU memory
         const chrIndex = tile * 16;
 
-        for (let r = 0; r < 8; r++) {
+        for (let ri = 0; ri < 8; ri++) {
+            const r = flipV ? 7 - ri : ri; // if the tile is flipped vertically, read the rows in reverse order
             const chrRow = patternTable.read(chrIndex + r);
             const attrRow = patternTable.read(chrIndex + r + 8);
             const x = xPos;
             const y = yPos + r;
 
-            for (let b = 0; b < 8; b++) {
+            for (let bi = 0; bi < 8; bi++) {
+
+                const b = flipH ? 7 - bi : bi; // if the tile is flipped horizontally, read the bits in reverse order
                 const chrBit = (chrRow >> (7 - b)) & 1;
                 const attrBit = (attrRow >> (7 - b)) & 1;
 
@@ -409,11 +416,14 @@ export class PPU {
             palette[2] = this.spritePalettes.read(paletteIndex + 2);
             palette[3] = this.spritePalettes.read(paletteIndex + 3);
 
+            const flipH = Boolean(Util.getBit(attributes, 6));
+            const flipV = Boolean(Util.getBit(attributes, 7));
+
 
             if (spriteIndex === 0) this.spriteZeroHit = true; // set sprite zero hit flag if the first sprite in OAM is being drawn, used for some games to do things like split the screen
 
             //if (tileIndex !== 0) console.log(`Drawing sprite $${Util.hex(tileIndex)} at X: ${Util.hex(xPos)} Y: ${Util.hex(yPos)}`);
-            this.drawTile(tileIndex, xPos, yPos, palette, false, false, false, this.patternTables[0], true);
+            this.drawTile(tileIndex, xPos, yPos, palette, flipH, flipV, false, this.patternTables[0], true);
         }
     }
 
@@ -463,7 +473,7 @@ export class PPU {
             this.ctx.fillStyle = color;
             this.ctx.fillRect(c * 16, 0, 16, 16);
         }
-        for (let i=0;i<debugAttr.length;i++){
+        /*for (let i=0;i<debugAttr.length;i++){
             const obj = debugAttr[i];
             this.ctx.globalAlpha = 0.9;
             if (obj.quadX === 0 && obj.quadY === 0) this.ctx.fillStyle='red';
@@ -475,7 +485,7 @@ export class PPU {
             this.ctx.globalAlpha = 1;
             this.ctx.fillStyle = 'white';
             this.ctx.fillText(String(obj.paletteIndex/4), obj.x * this.outputScaleX, obj.y * this.outputScaleY);
-        }
+        }*/
 
     }
 

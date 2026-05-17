@@ -213,8 +213,7 @@ export class CPU {
             return opCycles;
 
         } else {
-            console.log(`PC: ${Util.hex(this.PC)}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
-            //console.log(`Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
+            //console.log(`PC: ${Util.hex(this.PC)}  Invalid or unimplemented opcode: ${Util.hex(opcode)}`);
             this.PC++;
             return -1; // indicate invalid opcode with -1 cycles
         }
@@ -300,6 +299,7 @@ export class CPU {
 
     public pushToStack(value: number): void {
         this.SP--;
+        this.SP = this.SP & 0xFF;
         this.stack.write(value, this.getSP());
         //console.log(`Pushed ${Util.hex(value)} SP: ${Util.hex(this.SP)}`);
     }
@@ -307,6 +307,7 @@ export class CPU {
     public pullFromStack(): number {
         let value = this.stack.read(this.getSP());
         this.SP++;
+        this.SP = this.SP & 0xFF;
         //console.log(`Pulled SP: ${Util.hex(value)}  new SP: ${Util.hex(this.SP)}`);
         return value;
     }

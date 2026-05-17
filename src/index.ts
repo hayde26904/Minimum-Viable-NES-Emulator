@@ -158,10 +158,10 @@ function executeCPUCycles(cyclesToExecute: number) {
   while (cyclesExecuted < cyclesToExecute) {
 
     const cycles = cpu.executeNextOperation(false);
-    if (cycles === -1) {
+    /*if (cycles === -1) {
       pause();
       break;
-    }
+    }*/
     cyclesExecuted += cycles;
 
     for (let i = 0; i < cycles * 3; i++){

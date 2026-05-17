@@ -31,7 +31,7 @@ export class Bus {
             try {
                 return this.ppu.readRegister(0x2000 + (address % 8)); // mirroring every 8 bytes
             } catch(err){
-                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  error reading from PPU register: ${Util.hex(address)}`);
             }
 
         } else if(address >= 0x8000){ 
@@ -53,14 +53,15 @@ export class Bus {
             try {
                 this.ppu.writeRegister(value, 0x2000 + (address % 8));
             } catch(err){
-                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  ${err.message}`);
+                console.log(err.stack);
+                throw new Error(`PC: ${Util.hex(this.cpu.getPC())}  error writing ${Util.hex(value)} to PPU register: ${Util.hex(address)}`);
             }
 
         } else if(address === reg.OAMDMA){ //OAM DMA
 
             this.ppu.writeRegister(value, address);
 
-        } else if(address > 0x8000){
+        } else if(address >= 0x8000){
 
             this.mapper.write(value, address);
 
